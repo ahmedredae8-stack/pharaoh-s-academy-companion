@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CertificatesRouteImport } from './routes/certificates'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
@@ -27,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CertificatesRoute = CertificatesRouteImport.update({
+  id: '/certificates',
+  path: '/certificates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommunityRoute = CommunityRouteImport.update({
@@ -68,6 +74,7 @@ const ApiPublicPlayRtdnRoute = ApiPublicPlayRtdnRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/certificates'
     | '/community'
     | '/courses'
     | '/leaderboard'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/certificates'
     | '/community'
     | '/courses'
     | '/leaderboard'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/certificates'
     | '/community'
     | '/courses'
     | '/leaderboard'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CertificatesRoute: typeof CertificatesRoute
   CommunityRoute: typeof CommunityRoute
   CoursesRoute: typeof CoursesRoute
   LeaderboardRoute: typeof LeaderboardRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/certificates': {
+      id: '/certificates'
+      path: '/certificates'
+      fullPath: '/certificates'
+      preLoaderRoute: typeof CertificatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/community': {
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CertificatesRoute: CertificatesRoute,
   CommunityRoute: CommunityRoute,
   CoursesRoute: CoursesRoute,
   LeaderboardRoute: LeaderboardRoute,

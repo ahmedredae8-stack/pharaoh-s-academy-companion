@@ -4,16 +4,44 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { LESSON_COUNTS, PATH_CERT_TITLES } from "@/lib/certificate-catalog";
 
+const CERT_COLUMNS =
+  "id, path_id, course_title, recipient_name, serial, lessons_completed, quiz_average, issued_at, status, review_note, reviewed_at, signature_name, signature_title, signature_url, honors";
+
 export const getMyCertificates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("certificates")
-      .select("id, path_id, course_title, recipient_name, serial, lessons_completed, quiz_average, issued_at")
+      .select(CERT_COLUMNS)
       .eq("user_id", context.userId)
       .order("issued_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+/** Public verification by serial — only approved certificates are returned. */
+export const verifyCertificateSerial = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ serial: z.string().trim().min(4).max(64) }).parse(input))
+  .handler(async ({ data }) => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+    const client = createClient(process.env["SUPABASE_URL"]!, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        fetch: (input: any, init?: any) => {
+          const headers = new Headers(init?.headers);
+          if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) {
+            headers.delete("Authorization");
+          }
+          headers.set("apikey", key);
+          return fetch(input, { ...init, headers });
+        },
+      },
+    });
+    const { data: rows, error } = await client.rpc("verify_certificate", { p_serial: data.serial });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return { found: Boolean(row), certificate: (row ?? null) as Record<string, any> | null };
   });
 
 export const issueCertificate = createServerFn({ method: "POST" })

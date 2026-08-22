@@ -35,6 +35,7 @@ export type Database = {
       certificates: {
         Row: {
           course_title: string
+          honors: string | null
           id: string
           issued_at: string
           lessons_completed: number
@@ -45,11 +46,15 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           serial: string
+          signature_name: string | null
+          signature_title: string | null
+          signature_url: string | null
           status: string
           user_id: string
         }
         Insert: {
           course_title: string
+          honors?: string | null
           id?: string
           issued_at?: string
           lessons_completed?: number
@@ -60,11 +65,15 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           serial?: string
+          signature_name?: string | null
+          signature_title?: string | null
+          signature_url?: string | null
           status?: string
           user_id: string
         }
         Update: {
           course_title?: string
+          honors?: string | null
           id?: string
           issued_at?: string
           lessons_completed?: number
@@ -75,6 +84,9 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           serial?: string
+          signature_name?: string | null
+          signature_title?: string | null
+          signature_url?: string | null
           status?: string
           user_id?: string
         }
@@ -675,12 +687,16 @@ export type Database = {
         Args: { p_serial: string }
         Returns: {
           course_title: string
+          honors: string
           issued_at: string
           lessons_completed: number
           path_id: string
           quiz_average: number
           recipient_name: string
           serial: string
+          signature_name: string
+          signature_title: string
+          signature_url: string
         }[]
       }
     }
