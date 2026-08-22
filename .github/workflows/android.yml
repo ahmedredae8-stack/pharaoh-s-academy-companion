@@ -1,0 +1,113 @@
+name: Android (unsigned)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: bun install
+
+      # -------------------------------------------------------------
+      # 1. خطوة التأكد من وجود مكتبات الدفع (يتوقف البناء لو مش موجودة)
+      # -------------------------------------------------------------
+      - name: Check for Play Store Billing / Purchases library
+        run: |
+          echo "🔍 الجاري الفحص عن مكتبات الشراء والدفع من متجر بلاي..."
+          if grep -E '"@capgo/capacitor-purchases"|"@capacitor-community/inapp-purchase"|"cordova-plugin-purchase"|"billing"' package.json > /dev/null; then
+            echo "✅ تم العثور على مكتبة الدفع بنجاح!"
+          else
+            echo "❌ خطأ قاتل: لم يتم العثور على أي مكتبة دفع لمتجر بلاي في package.json!"
+            echo "🛑 تم إيقاف عملية البناء لحماية التطبيق من الرفض."
+            exit 1
+          fi
+
+      - name: Build web bundle
+        run: bun run build
+
+      - name: Ensure webDir exists
+        run: mkdir -p dist/client
+
+      - name: Add Android platform
+        run: bunx cap add android || true
+
+      - name: Create assets folder
+        run: mkdir -p android/app/src/main/assets
+
+      # -------------------------------------------------------------
+      # 2. تحديث targetSdkVersion و compileSdkVersion إلى API 36
+      # -------------------------------------------------------------
+      - name: Update Target & Compile SDK to API 36
+        run: |
+          echo "⚙️ تعديل واجهة برمجة التطبيقات (SDK) لتصبح 36..."
+          if [ -f "android/variables.gradle" ]; then
+            sed -i -E 's/targetSdkVersion\s*=\s*[0-9]+/targetSdkVersion = 36/' android/variables.gradle
+            sed -i -E 's/compileSdkVersion\s*=\s*[0-9]+/compileSdkVersion = 36/' android/variables.gradle
+          fi
+
+      - name: Generate app icons
+        run: bunx @capacitor/assets generate --android || true
+
+      - name: Sync Capacitor
+        run: bunx cap sync android
+
+      - name: Set version, applicationId, App Name and force SDK 36
+        working-directory: android/app
+        run: |
+          if [ -f "build.gradle.kts" ]; then
+            echo "Found build.gradle.kts (Kotlin DSL)"
+            sed -i -E 's/versionCode\s*=\s*.*/versionCode = 25/' build.gradle.kts
+            sed -i -E 's/versionName\s*=\s*".*"/versionName = "ar.1"/' build.gradle.kts
+            sed -i -E 's/applicationId\s*=\s*".*"/applicationId = "pharaoh.ar"/' build.gradle.kts
+            sed -i -E 's/targetSdk\s*=\s*[0-9]+/targetSdk = 36/' build.gradle.kts || true
+            sed -i -E 's/compileSdk\s*=\s*[0-9]+/compileSdk = 36/' build.gradle.kts || true
+            GRADLE_FILE="build.gradle.kts"
+          elif [ -f "build.gradle" ]; then
+            echo "Found build.gradle (Groovy)"
+            sed -i -E 's/versionCode[[:space:]]+.*/versionCode 25/' build.gradle
+            sed -i -E 's/versionName[[:space:]]+".*"/versionName "ar.1"/' build.gradle
+            sed -i -E 's/applicationId[[:space:]]+".*"/applicationId "pharaoh.ar"/' build.gradle
+            sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/' build.gradle || true
+            sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/' build.gradle || true
+            GRADLE_FILE="build.gradle"
+          else
+            echo "Error: Neither build.gradle nor build.gradle.kts found!"
+            ls -la
+            exit 1
+          fi
+          
+          # تأكيد اسم التطبيق ليكون "فرعون ai"
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">فرعون ai<\/string>/' src/main/res/values/strings.xml || true
+          
+          grep -E "applicationId|versionCode|versionName" $GRADLE_FILE
+
+      - name: Build unsigned release AAB + APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bundleRelease assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pharaoh-android-unsigned
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
