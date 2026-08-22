@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificates: {
+        Row: {
+          course_title: string
+          id: string
+          issued_at: string
+          lessons_completed: number
+          path_id: string
+          quiz_average: number
+          recipient_name: string
+          serial: string
+          user_id: string
+        }
+        Insert: {
+          course_title: string
+          id?: string
+          issued_at?: string
+          lessons_completed?: number
+          path_id: string
+          quiz_average?: number
+          recipient_name: string
+          serial?: string
+          user_id: string
+        }
+        Update: {
+          course_title?: string
+          id?: string
+          issued_at?: string
+          lessons_completed?: number
+          path_id?: string
+          quiz_average?: number
+          recipient_name?: string
+          serial?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       entitlements: {
         Row: {
           auto_renewing: boolean
@@ -47,6 +83,33 @@ export type Database = {
         }
         Relationships: []
       }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lab_completions: {
         Row: {
           created_at: string
@@ -70,6 +133,80 @@ export type Database = {
           lab_id?: string
           lesson_index?: number
           path_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
@@ -217,6 +354,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      are_friends: { Args: { a: string; b: string }; Returns: boolean }
+      community_feed: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          avatar_url: string
+          content: string
+          created_at: string
+          display_name: string
+          id: string
+          liked: boolean
+          likes: number
+          user_id: string
+        }[]
+      }
       has_active_entitlement: {
         Args: { _product_id: string; _user_id: string }
         Returns: boolean
@@ -237,6 +388,38 @@ export type Database = {
           quiz_points: number
           user_id: string
           xp: number
+        }[]
+      }
+      my_friends: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          direction: string
+          display_name: string
+          friendship_id: string
+          status: string
+          unread: number
+          user_id: string
+        }[]
+      }
+      search_profiles: {
+        Args: { p_query: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+        }[]
+      }
+      verify_certificate: {
+        Args: { p_serial: string }
+        Returns: {
+          course_title: string
+          issued_at: string
+          lessons_completed: number
+          path_id: string
+          quiz_average: number
+          recipient_name: string
+          serial: string
         }[]
       }
     }
