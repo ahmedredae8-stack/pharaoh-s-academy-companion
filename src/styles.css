@@ -554,3 +554,215 @@
   border-color: var(--color-duo-line) !important;
   box-shadow: 0 3px 0 0 var(--color-duo-line);
 }
+
+/* ── Institutional certificate sheet ───────────────────────────────────── */
+@theme {
+  --color-cert-ink: #0b1a2b;
+  --color-cert-paper: #fffdf7;
+  --color-cert-gold: #b08421;
+  --color-cert-gold-soft: #e6cf95;
+  --color-cert-muted: #5b6a7d;
+}
+
+@utility cert-sheet {
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 1.414 / 1;
+  container-type: inline-size;
+  background: var(--color-cert-paper);
+  border-radius: 10px;
+  padding: clamp(8px, 1.6cqw, 18px);
+  box-shadow: 0 24px 60px -30px rgba(11, 26, 43, 0.55);
+  background-image:
+    radial-gradient(circle at 8% 0%, rgba(176, 132, 33, 0.12), transparent 45%),
+    radial-gradient(circle at 100% 100%, rgba(11, 26, 43, 0.09), transparent 50%);
+}
+
+.cert-frame {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  overflow: hidden;
+  border: 2px solid var(--color-cert-gold);
+  outline: 1px solid var(--color-cert-gold-soft);
+  outline-offset: 5px;
+  border-radius: 6px;
+  padding: clamp(10px, 3cqw, 40px) clamp(12px, 4cqw, 56px);
+  color: var(--color-cert-ink);
+  font-family: "Georgia", "Times New Roman", serif;
+}
+
+.cert-watermark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12cqw;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgba(176, 132, 33, 0.12);
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+
+.cert-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.cert-emblem {
+  height: 5cqw;
+  min-height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+.cert-org {
+  font-size: 2.6cqw;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  line-height: 1.1;
+}
+.cert-org-sub {
+  font-size: 1.5cqw;
+  letter-spacing: 0.16em;
+  color: var(--color-cert-muted);
+  text-transform: uppercase;
+}
+.cert-kicker {
+  font-size: 1.6cqw;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--color-cert-gold);
+}
+.cert-intro {
+  font-size: 1.7cqw;
+  color: var(--color-cert-muted);
+  font-style: italic;
+}
+.cert-name {
+  font-size: 6cqw;
+  line-height: 1.1;
+  font-weight: 700;
+  border-bottom: 1px solid var(--color-cert-gold-soft);
+  padding-bottom: 0.15em;
+}
+.cert-course {
+  font-size: 2.6cqw;
+  font-weight: 700;
+}
+.cert-course-ar {
+  font-family: var(--font-sans);
+  font-size: 1.7cqw;
+  color: var(--color-cert-muted);
+}
+.cert-honors {
+  font-size: 1.7cqw;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-cert-gold);
+}
+.cert-metrics {
+  display: flex;
+  gap: clamp(10px, 3cqw, 42px);
+  font-size: 1.5cqw;
+  color: var(--color-cert-muted);
+}
+.cert-metrics strong {
+  color: var(--color-cert-ink);
+}
+.cert-foot {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.cert-sign {
+  width: 30%;
+  text-align: center;
+}
+.cert-sign-img {
+  height: 5cqw;
+  margin: 0 auto;
+  object-fit: contain;
+}
+.cert-sign-placeholder {
+  display: block;
+  height: 5cqw;
+  font-size: 1.3cqw;
+  color: rgba(91, 106, 125, 0.5);
+  font-style: italic;
+  display: grid;
+  place-items: end center;
+}
+.cert-sign-line {
+  display: block;
+  height: 1px;
+  background: var(--color-cert-ink);
+  margin: 0.35em 0;
+}
+.cert-sign-name {
+  font-size: 1.5cqw;
+  font-weight: 700;
+}
+.cert-sign-title {
+  font-size: 1.25cqw;
+  color: var(--color-cert-muted);
+}
+.cert-seal {
+  display: grid;
+  place-items: center;
+  height: 11cqw;
+  width: 11cqw;
+  border-radius: 999px;
+  border: 2px solid var(--color-cert-gold);
+  outline: 1px solid var(--color-cert-gold-soft);
+  outline-offset: 3px;
+  color: var(--color-cert-gold);
+  font-size: 1.1cqw;
+  letter-spacing: 0.16em;
+  line-height: 1.6;
+  background: radial-gradient(circle, rgba(176, 132, 33, 0.1), transparent 70%);
+}
+.cert-seal strong {
+  font-size: 1.3cqw;
+}
+.cert-serial {
+  width: 30%;
+  text-align: center;
+}
+.cert-serial-label {
+  font-size: 1.2cqw;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-cert-muted);
+}
+.cert-serial-value {
+  font-family: "Courier New", monospace;
+  font-size: 1.6cqw;
+  font-weight: 700;
+}
+.cert-serial-hint {
+  font-size: 1.1cqw;
+  color: var(--color-cert-muted);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .cert-sheet,
+  .cert-sheet * {
+    visibility: visible;
+  }
+  .cert-sheet {
+    position: fixed;
+    inset: 0;
+    max-width: none;
+    box-shadow: none;
+  }
+}
