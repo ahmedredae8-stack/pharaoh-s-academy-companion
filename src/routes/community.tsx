@@ -444,7 +444,10 @@ function FriendsTab() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (query.trim().length < 2) return toast.error("اكتب حرفين على الأقل");
+          if (query.trim().length < 2) {
+            toast.error("اكتب حرفين على الأقل");
+            return;
+          }
           search.mutate(query.trim());
         }}
         className="duo-card flex gap-2 p-3"
