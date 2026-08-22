@@ -14,16 +14,234 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      entitlements: {
+        Row: {
+          auto_renewing: boolean
+          created_at: string
+          expires_at: string | null
+          product_id: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renewing?: boolean
+          created_at?: string
+          expires_at?: string | null
+          product_id: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renewing?: boolean
+          created_at?: string
+          expires_at?: string | null
+          product_id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lab_completions: {
+        Row: {
+          created_at: string
+          id: string
+          lab_id: string
+          lesson_index: number
+          path_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lab_id?: string
+          lesson_index: number
+          path_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lab_id?: string
+          lesson_index?: number
+          path_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      progress: {
+        Row: {
+          data: Json
+          lesson_skip_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          data?: Json
+          lesson_skip_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          data?: Json
+          lesson_skip_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          order_id: string | null
+          platform: string
+          product_id: string
+          purchase_token: string
+          raw: Json | null
+          state: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          platform?: string
+          product_id: string
+          purchase_token: string
+          raw?: Json | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          platform?: string
+          product_id?: string
+          purchase_token?: string
+          raw?: Json | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_index: number
+          path_id: string
+          score: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_index: number
+          path_id: string
+          score: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_index?: number
+          path_id?: string
+          score?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_active_entitlement: {
+        Args: { _product_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      leaderboard_top: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          labs: number
+          quiz_points: number
+          user_id: string
+          xp: number
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +368,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
