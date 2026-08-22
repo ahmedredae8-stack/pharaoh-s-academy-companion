@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           course_title: string
@@ -23,7 +41,11 @@ export type Database = {
           path_id: string
           quiz_average: number
           recipient_name: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           serial: string
+          status: string
           user_id: string
         }
         Insert: {
@@ -34,7 +56,11 @@ export type Database = {
           path_id: string
           quiz_average?: number
           recipient_name: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           serial?: string
+          status?: string
           user_id: string
         }
         Update: {
@@ -45,7 +71,11 @@ export type Database = {
           path_id?: string
           quiz_average?: number
           recipient_name?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           serial?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -164,6 +194,74 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      post_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -195,42 +293,105 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          kind: string
+          play_error: string | null
+          play_status: string
+          play_synced_at: string | null
+          price_cents: number
+          product_id: string
+          provider: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          play_error?: string | null
+          play_status?: string
+          play_synced_at?: string | null
+          price_cents?: number
+          product_id: string
+          provider?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          play_error?: string | null
+          play_status?: string
+          play_synced_at?: string | null
+          price_cents?: number
+          product_id?: string
+          provider?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          is_banned: boolean
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          is_banned?: boolean
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_banned?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -328,6 +489,66 @@ export type Database = {
         }
         Relationships: []
       }
+      redeem_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          note: string | null
+          product_id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          note?: string | null
+          product_id: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          note?: string | null
+          product_id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          content: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          media_url: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_url?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -354,15 +575,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      are_friends: { Args: { a: string; b: string }; Returns: boolean }
-      community_feed: {
-        Args: { p_limit?: number; p_offset?: number }
+      active_stories: {
+        Args: never
         Returns: {
           avatar_url: string
           content: string
           created_at: string
           display_name: string
+          expires_at: string
           id: string
+          media_url: string
+          user_id: string
+        }[]
+      }
+      are_friends: { Args: { a: string; b: string }; Returns: boolean }
+      community_feed: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          avatar_url: string
+          comments: number
+          content: string
+          created_at: string
+          display_name: string
+          id: string
+          image_url: string
           liked: boolean
           likes: number
           user_id: string
@@ -379,6 +615,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_member: { Args: { _user_id: string }; Returns: boolean }
+      is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       leaderboard_top: {
         Args: { _limit?: number }
         Returns: {
@@ -402,11 +640,34 @@ export type Database = {
           user_id: string
         }[]
       }
+      post_comments_feed: {
+        Args: { p_post_id: string }
+        Returns: {
+          avatar_url: string
+          content: string
+          created_at: string
+          display_name: string
+          id: string
+          user_id: string
+        }[]
+      }
+      push_notification: {
+        Args: {
+          _actor: string
+          _body: string
+          _link: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       search_profiles: {
         Args: { p_query: string }
         Returns: {
           avatar_url: string
           display_name: string
+          friend_status: string
           id: string
         }[]
       }
