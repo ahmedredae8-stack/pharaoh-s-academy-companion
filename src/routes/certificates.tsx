@@ -40,7 +40,7 @@ function StatusBadge({ status }: { status: string }) {
     approved: { text: "معتمدة", className: "bg-duo-surface-2 text-duo-blue-dark", Icon: ShieldCheck },
     rejected: { text: "مرفوضة", className: "bg-duo-surface-2 text-duo-red", Icon: XCircle },
   };
-  const item = map[status] ?? map.pending!;
+  const item = map[status] ?? map["pending"]!;
   const Icon = item.Icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black ${item.className}`}>
@@ -171,10 +171,11 @@ function CertificatesPage() {
 
             {preview?.serial === cert.serial ? (
               <div className="overflow-x-auto">
-                <CertificateSheet
-                  data={cert}
-                  watermark={cert.status === "approved" ? undefined : "PENDING REVIEW"}
-                />
+                {cert.status === "approved" ? (
+                  <CertificateSheet data={cert} />
+                ) : (
+                  <CertificateSheet data={cert} watermark="PENDING REVIEW" />
+                )}
               </div>
             ) : null}
           </article>
