@@ -18,6 +18,7 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as ApiPublicPlayRtdnRouteImport } from './routes/api/public/play-rtdn'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +66,11 @@ const RoadmapRoute = RoadmapRouteImport.update({
   path: '/roadmap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPlayRtdnRoute = ApiPublicPlayRtdnRouteImport.update({
   id: '/api/public/play-rtdn',
   path: '/api/public/play-rtdn',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/roadmap': typeof RoadmapRoute
+  '/verify': typeof VerifyRoute
   '/api/public/play-rtdn': typeof ApiPublicPlayRtdnRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/roadmap': typeof RoadmapRoute
+  '/verify': typeof VerifyRoute
   '/api/public/play-rtdn': typeof ApiPublicPlayRtdnRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/roadmap': typeof RoadmapRoute
+  '/verify': typeof VerifyRoute
   '/api/public/play-rtdn': typeof ApiPublicPlayRtdnRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progress'
     | '/roadmap'
+    | '/verify'
     | '/api/public/play-rtdn'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progress'
     | '/roadmap'
+    | '/verify'
     | '/api/public/play-rtdn'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progress'
     | '/roadmap'
+    | '/verify'
     | '/api/public/play-rtdn'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ProgressRoute: typeof ProgressRoute
   RoadmapRoute: typeof RoadmapRoute
+  VerifyRoute: typeof VerifyRoute
   ApiPublicPlayRtdnRoute: typeof ApiPublicPlayRtdnRoute
 }
 
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/play-rtdn': {
       id: '/api/public/play-rtdn'
       path: '/api/public/play-rtdn'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ProgressRoute: ProgressRoute,
   RoadmapRoute: RoadmapRoute,
+  VerifyRoute: VerifyRoute,
   ApiPublicPlayRtdnRoute: ApiPublicPlayRtdnRoute,
 }
 export const routeTree = rootRouteImport
