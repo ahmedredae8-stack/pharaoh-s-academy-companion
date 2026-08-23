@@ -65,6 +65,7 @@ function AuthPage() {
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const strength = useMemo(() => scorePassword(password), [password]);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
@@ -107,7 +108,8 @@ function AuthPage() {
         });
         if (error) throw error;
         if (!data.session) {
-          toast.success("تم إنشاء الحساب. تفقّد بريدك لتأكيد التسجيل.");
+          setSentTo(email);
+          toast.success("تم إنشاء الحساب. أرسلنا رسالة تأكيد إلى بريدك.");
           return;
         }
       } else {
@@ -175,6 +177,16 @@ function AuthPage() {
           <ShieldCheck className="h-4 w-4 text-duo-green" />
           حسابك محمي وتشفير كامل لبياناتك
         </div>
+
+        {sentTo ? (
+          <div className="mt-4 space-y-1 rounded-2xl border-2 border-duo-green bg-duo-surface-2 p-4 text-center">
+            <p className="text-sm font-black text-duo-green">تحقّق من بريدك الإلكتروني</p>
+            <p className="text-xs font-bold text-duo-muted">
+              أرسلنا رسالة تأكيد إلى <span className="font-mono">{sentTo}</span>. افتح الرابط داخل الرسالة لتفعيل حسابك،
+              ثم عد لتسجيل الدخول. تفقّد مجلد الرسائل غير المرغوب فيها إن لم تجدها.
+            </p>
+          </div>
+        ) : null}
 
         <button
           onClick={() => void google()}

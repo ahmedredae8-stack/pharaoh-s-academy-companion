@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { useAccount } from "@/components/account/AccountProvider";
 import { DuoLayout } from "@/components/duo/DuoLayout";
+import { isEmojiAvatar, mediaUrl, uploadMedia } from "@/lib/media";
 import { updateMyProfile } from "@/lib/profile.functions";
 import { getMyStats } from "@/lib/stats.functions";
 
@@ -36,12 +37,43 @@ function ProfilePage() {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("🐱");
   const [busy, setBusy] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (!account?.profile) return;
     setName(account.profile.display_name ?? "");
     if (account.profile.avatar_url) setAvatar(account.profile.avatar_url);
   }, [account]);
+
+  useEffect(() => {
+    let alive = true;
+    if (isEmojiAvatar(avatar)) {
+      setAvatarSrc(null);
+      return;
+    }
+    void mediaUrl(avatar).then((url) => {
+      if (alive) setAvatarSrc(url);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [avatar]);
+
+  async function onPickFile(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const path = await uploadMedia(file, "avatars");
+      setAvatar(path);
+      await updateMyProfile({ data: { displayName: name || "مجنّد", avatar: path } });
+      await refresh();
+      toast.success("تم رفع صورتك الشخصية");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر رفع الصورة");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const { data: stats } = useQuery({
     queryKey: ["my-stats", session?.user.id ?? "anon"],
@@ -87,8 +119,12 @@ function ProfilePage() {
 
       <div className="duo-card mt-4 p-5">
         <div className="flex items-center gap-4">
-          <span className="grid h-20 w-20 place-items-center rounded-full bg-duo-surface-2 text-4xl">
-            {avatar}
+          <span className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-duo-surface-2 text-4xl">
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="صورتي الشخصية" className="h-full w-full object-cover" />
+            ) : (
+              avatar
+            )}
           </span>
           <div className="flex-1">
             <input
@@ -101,7 +137,18 @@ function ProfilePage() {
           </div>
         </div>
 
-        <p className="mt-5 text-sm font-bold text-duo-muted">اختر صورتك الافتراضية</p>
+        <label className="mt-5 flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-duo-line bg-duo-surface-2 px-4 py-3 text-sm font-bold text-duo-muted">
+          ارفع صورة شخصية مخصّصة (حتى 5 ميجابايت)
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => void onPickFile(e.target.files?.[0])}
+          />
+        </label>
+
+        <p className="mt-5 text-sm font-bold text-duo-muted">أو اختر صورة رمزية جاهزة</p>
         <div className="mt-2 grid grid-cols-6 gap-2">
           {AVATARS.map((a) => (
             <button

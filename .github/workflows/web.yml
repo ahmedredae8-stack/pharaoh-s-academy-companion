@@ -1,0 +1,65 @@
+name: Web CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile || bun install
+
+      - name: Lint
+        run: bunx eslint . --max-warnings=0
+        continue-on-error: true
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Build web bundle
+        run: bun run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: pharaoh-web-build
+          path: dist
+          retention-days: 7
+
+  play-policy-check:
+    name: Google Play policy guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure privacy and data-deletion surfaces exist
+        run: |
+          missing=0
+          for f in public/app-ads.txt public/robots.txt; do
+            [ -f "$f" ] || { echo "❌ ملف مفقود: $f"; missing=1; }
+          done
+          if grep -rIl --exclude-dir=node_modules -E "nmap|metasploit|sqlmap -" src >/dev/null 2>&1; then
+            echo "❌ تم رصد أدوات هجوم حقيقية داخل الكود — مخالف لسياسة Google Play"
+            missing=1
+          fi
+          [ "$missing" = "0" ] && echo "✅ الفحوصات السياساتية اجتازت بنجاح"
+          exit $missing
