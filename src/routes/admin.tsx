@@ -53,7 +53,7 @@ function AdminPage() {
 
   const [tab, setTab] = useState<"certs" | "users" | "codes">("certs");
   const [userQuery, setUserQuery] = useState("");
-  const [editing, setEditing] = useState<Record<string, any> | null>(null);
+  const [editing, setEditing] = useState<any>(null);
   const [codeProduct, setCodeProduct] = useState("pharaoh_pro_lifetime");
   const [codeCount, setCodeCount] = useState(5);
 
