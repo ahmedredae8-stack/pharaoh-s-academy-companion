@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Flame, Gem, Home, Trophy, User } from "lucide-react";
+import { Award, BookOpen, Flame, Gem, Home, Trophy, User, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 
@@ -8,6 +8,8 @@ import { useAccount } from "@/components/account/AccountProvider";
 const NAV = [
   { to: "/", label: "الرئيسية", icon: Home },
   { to: "/courses", label: "كورسات", icon: BookOpen },
+  { to: "/community", label: "الأصدقاء", icon: Users },
+  { to: "/certificates", label: "شهاداتي", icon: Award },
   { to: "/leaderboard", label: "المتصدرون", icon: Trophy },
   { to: "/profile", label: "ملفي", icon: User },
 ] as const;
