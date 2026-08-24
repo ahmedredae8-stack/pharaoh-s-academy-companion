@@ -1,10 +1,24 @@
-name: Android (unsigned)
+name: Android (build + Play upload)
 
 on:
   workflow_dispatch:
+    inputs:
+      track:
+        description: "مسار الرفع في Play Console"
+        required: false
+        default: "internal"
+        type: choice
+        options: [internal, alpha, beta, production]
   push:
     tags:
       - "v*"
+
+env:
+  APP_ID: pharaoh.ar
+  APP_NAME: فرعون Ai
+  COMPILE_SDK: "36"
+  TARGET_SDK: "36"
+  VERSION_NAME: "1.1.0"
 
 jobs:
   build:
@@ -27,7 +41,7 @@ jobs:
         run: bun install
 
       # -------------------------------------------------------------
-      # 1. خطوة التأكد من وجود مكتبات الدفع (يتوقف البناء لو مش موجودة)
+      # 1. التأكد من وجود مكتبة الدفع (Google Play Billing)
       # -------------------------------------------------------------
       - name: Check for Play Store Billing / Purchases library
         run: |
@@ -36,7 +50,6 @@ jobs:
             echo "✅ تم العثور على مكتبة الدفع بنجاح!"
           else
             echo "❌ خطأ قاتل: لم يتم العثور على أي مكتبة دفع لمتجر بلاي في package.json!"
-            echo "🛑 تم إيقاف عملية البناء لحماية التطبيق من الرفض."
             exit 1
           fi
 
@@ -53,14 +66,17 @@ jobs:
         run: mkdir -p android/app/src/main/assets
 
       # -------------------------------------------------------------
-      # 2. تحديث targetSdkVersion و compileSdkVersion إلى API 36
+      # 2. رفع versionCode تلقائيًا و SDK إلى 36
       # -------------------------------------------------------------
-      - name: Update Target & Compile SDK to API 36
+      - name: Compute versionCode
+        id: version
+        run: echo "code=$(( 100 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
+
+      - name: Update Target & Compile SDK
         run: |
-          echo "⚙️ تعديل واجهة برمجة التطبيقات (SDK) لتصبح 36..."
           if [ -f "android/variables.gradle" ]; then
-            sed -i -E 's/targetSdkVersion\s*=\s*[0-9]+/targetSdkVersion = 36/' android/variables.gradle
-            sed -i -E 's/compileSdkVersion\s*=\s*[0-9]+/compileSdkVersion = 36/' android/variables.gradle
+            sed -i -E "s/targetSdkVersion\s*=\s*[0-9]+/targetSdkVersion = ${TARGET_SDK}/" android/variables.gradle
+            sed -i -E "s/compileSdkVersion\s*=\s*[0-9]+/compileSdkVersion = ${COMPILE_SDK}/" android/variables.gradle
           fi
 
       - name: Generate app icons
@@ -69,37 +85,64 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
-      - name: Set version, applicationId, App Name and force SDK 36
+      - name: Set version, applicationId, app name and SDK
         working-directory: android/app
         run: |
+          CODE="${{ steps.version.outputs.code }}"
           if [ -f "build.gradle.kts" ]; then
-            echo "Found build.gradle.kts (Kotlin DSL)"
-            sed -i -E 's/versionCode\s*=\s*.*/versionCode = 25/' build.gradle.kts
-            sed -i -E 's/versionName\s*=\s*".*"/versionName = "ar.1"/' build.gradle.kts
-            sed -i -E 's/applicationId\s*=\s*".*"/applicationId = "pharaoh.ar"/' build.gradle.kts
-            sed -i -E 's/targetSdk\s*=\s*[0-9]+/targetSdk = 36/' build.gradle.kts || true
-            sed -i -E 's/compileSdk\s*=\s*[0-9]+/compileSdk = 36/' build.gradle.kts || true
+            sed -i -E "s/versionCode\s*=\s*.*/versionCode = ${CODE}/" build.gradle.kts
+            sed -i -E "s/versionName\s*=\s*\".*\"/versionName = \"${VERSION_NAME}\"/" build.gradle.kts
+            sed -i -E "s/applicationId\s*=\s*\".*\"/applicationId = \"${APP_ID}\"/" build.gradle.kts
+            sed -i -E "s/targetSdk\s*=\s*[0-9]+/targetSdk = ${TARGET_SDK}/" build.gradle.kts || true
+            sed -i -E "s/compileSdk\s*=\s*[0-9]+/compileSdk = ${COMPILE_SDK}/" build.gradle.kts || true
             GRADLE_FILE="build.gradle.kts"
           elif [ -f "build.gradle" ]; then
-            echo "Found build.gradle (Groovy)"
-            sed -i -E 's/versionCode[[:space:]]+.*/versionCode 25/' build.gradle
-            sed -i -E 's/versionName[[:space:]]+".*"/versionName "ar.1"/' build.gradle
-            sed -i -E 's/applicationId[[:space:]]+".*"/applicationId "pharaoh.ar"/' build.gradle
-            sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/' build.gradle || true
-            sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/' build.gradle || true
+            sed -i -E "s/versionCode[[:space:]]+.*/versionCode ${CODE}/" build.gradle
+            sed -i -E "s/versionName[[:space:]]+\".*\"/versionName \"${VERSION_NAME}\"/" build.gradle
+            sed -i -E "s/applicationId[[:space:]]+\".*\"/applicationId \"${APP_ID}\"/" build.gradle
+            sed -i -E "s/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion ${TARGET_SDK}/" build.gradle || true
+            sed -i -E "s/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion ${COMPILE_SDK}/" build.gradle || true
             GRADLE_FILE="build.gradle"
           else
-            echo "Error: Neither build.gradle nor build.gradle.kts found!"
-            ls -la
-            exit 1
+            echo "Error: gradle file not found"; ls -la; exit 1
           fi
-          
-          # تأكيد اسم التطبيق ليكون "فرعون ai"
-          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">فرعون ai<\/string>/' src/main/res/values/strings.xml || true
-          
+          sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${APP_NAME}</string>|" src/main/res/values/strings.xml || true
           grep -E "applicationId|versionCode|versionName" $GRADLE_FILE
 
+      # -------------------------------------------------------------
+      # 3. مفتاح التوقيع (اختياري): لو الأسرار موجودة يتم بناء نسخة موقّعة
+      # -------------------------------------------------------------
+      - name: Decode keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "🔐 سيتم إنتاج نسخة موقّعة"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ لا يوجد مفتاح توقيع — سيتم إنتاج نسخة غير موقّعة"
+          fi
+
+      - name: Build signed release AAB + APK
+        if: steps.keystore.outputs.signed == 'true'
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bundleRelease assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/release.keystore \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
       - name: Build unsigned release AAB + APK
+        if: steps.keystore.outputs.signed != 'true'
         working-directory: android
         run: |
           chmod +x ./gradlew
@@ -107,7 +150,38 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pharaoh-android-unsigned
+          name: pharaoh-android-${{ steps.keystore.outputs.signed == 'true' && 'signed' || 'unsigned' }}
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/release/*.apk
+
+      # -------------------------------------------------------------
+      # 4. الرفع التلقائي إلى Google Play Console
+      # -------------------------------------------------------------
+      - name: Write Play service account
+        id: play
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_JSON" ] && [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+            echo "$PLAY_JSON" > play-service-account.json
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ تخطّي الرفع: يلزم مفتاح توقيع + PLAY_SERVICE_ACCOUNT_JSON"
+          fi
+
+      - name: Upload to Google Play
+        if: steps.play.outputs.ready == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: play-service-account.json
+          packageName: pharaoh.ar
+          releaseFiles: android/app/build/outputs/bundle/release/*.aab
+          track: ${{ github.event.inputs.track || 'internal' }}
+          status: completed
+          changesNotSentForReview: false
+
+      - name: Clean secrets from runner
+        if: always()
+        run: rm -f play-service-account.json android/app/release.keystore
