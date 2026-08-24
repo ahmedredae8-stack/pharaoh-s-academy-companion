@@ -1,80 +1,42 @@
-// Paid course catalog shown as cards on /courses.
+// The single flagship paid course shown on /courses.
+import courseCover from "@/assets/course-cyber-range.jpg";
+
 export type PaidCourse = {
   id: string;
   title: string;
+  englishTitle: string;
   subtitle: string;
   level: string;
   hours: number;
   lessons: number;
   price: string;
   oldPrice?: string;
-  badge?: string;
-  emoji: string;
+  badge: string;
+  cover: string;
+  highlights: string[];
+  comingSoon: boolean;
 };
 
-export const PAID_COURSES: PaidCourse[] = [
-  {
-    id: "soc-analyst",
-    title: "محلل مركز عمليات أمنية (SOC L1)",
-    subtitle: "تحليل السجلات، SIEM، والتعامل مع الحوادث خطوة بخطوة.",
-    level: "مبتدئ → متوسط",
-    hours: 28,
-    lessons: 42,
-    price: "٢٤.٩٩$",
-    oldPrice: "٤٩.٩٩$",
-    badge: "الأكثر طلبًا",
-    emoji: "🛡️",
-  },
-  {
-    id: "network-security",
-    title: "أساسيات أمن الشبكات",
-    subtitle: "TCP/IP، الجدران النارية، اكتشاف التسلل ومعمل منزلي كامل.",
-    level: "مبتدئ",
-    hours: 18,
-    lessons: 30,
-    price: "١٩.٩٩$",
-    emoji: "🌐",
-  },
-  {
-    id: "ethical-hacking",
-    title: "الاختراق الأخلاقي العملي",
-    subtitle: "استطلاع، استغلال ثغرات الويب، وتقرير اختبار اختراق حقيقي.",
-    level: "متوسط",
-    hours: 32,
-    lessons: 48,
-    price: "٢٩.٩٩$",
-    oldPrice: "٥٩.٩٩$",
-    emoji: "🐉",
-  },
-  {
-    id: "digital-forensics",
-    title: "التحليل الجنائي الرقمي",
-    subtitle: "استخراج الأدلة من الأقراص والذاكرة وبناء الخط الزمني للحادث.",
-    level: "متوسط → متقدم",
-    hours: 24,
-    lessons: 36,
-    price: "٢٧.٩٩$",
-    emoji: "🔎",
-  },
-  {
-    id: "cloud-security",
-    title: "أمن السحابة",
-    subtitle: "تأمين الهوية والصلاحيات والحاويات على البيئات السحابية.",
-    level: "متقدم",
-    hours: 22,
-    lessons: 34,
-    price: "٣٤.٩٩$",
-    badge: "جديد",
-    emoji: "☁️",
-  },
-  {
-    id: "malware-analysis",
-    title: "تحليل البرمجيات الخبيثة",
-    subtitle: "تحليل ساكن وديناميكي داخل بيئة معزولة آمنة.",
-    level: "متقدم",
-    hours: 26,
-    lessons: 38,
-    price: "٣٩.٩٩$",
-    emoji: "🦠",
-  },
-];
+export const FLAGSHIP_COURSE: PaidCourse = {
+  id: "course_cyber_range",
+  title: "فرعون سايبر رينج — معامل هجوم ودفاع حيّة",
+  englishTitle: "Pharaoh Cyber Range",
+  subtitle:
+    "كورس واحد بمستوى المنصات العالمية: معامل محاكاة آمنة داخل المتصفح، أعلام (Flags)، تقارير حوادث، ومساعد ذكاء اصطناعي يبني لك تحديات جديدة باستمرار.",
+  level: "مبتدئ → محترف",
+  hours: 60,
+  lessons: 120,
+  price: "٢٩.٩٩$",
+  oldPrice: "٥٩.٩٩$",
+  badge: "قريبًا",
+  cover: courseCover,
+  highlights: [
+    "معامل محاكاة آمنة 100% متوافقة مع سياسات Google Play",
+    "نظام أعلام ونقاط وتلميحات مثل المنصات العالمية",
+    "مساعد ذكاء اصطناعي يشرح ويولّد تحديات جديدة",
+    "شهادة احترافية معتمدة بعد مراجعة الإدارة",
+  ],
+  comingSoon: true,
+};
+
+export const PAID_COURSES: PaidCourse[] = [FLAGSHIP_COURSE];

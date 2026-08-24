@@ -50,6 +50,7 @@ export type Database = {
           signature_title: string | null
           signature_url: string | null
           status: string
+          template: string
           user_id: string
         }
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           signature_title?: string | null
           signature_url?: string | null
           status?: string
+          template?: string
           user_id: string
         }
         Update: {
@@ -88,7 +90,53 @@ export type Database = {
           signature_title?: string | null
           signature_url?: string | null
           status?: string
+          template?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      course_lessons: {
+        Row: {
+          audio_url: string | null
+          body: string
+          course_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string | null
+          position: number
+          published: boolean
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          body?: string
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          position?: number
+          published?: boolean
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          body?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          position?: number
+          published?: boolean
+          title?: string
+          updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -468,6 +516,33 @@ export type Database = {
           state?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
