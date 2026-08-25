@@ -1,5 +1,13 @@
 import { forwardRef } from "react";
 
+export type CertificateTemplate = "royal" | "modern" | "classic";
+
+export const CERTIFICATE_TEMPLATES: { id: CertificateTemplate; label: string; hint: string }[] = [
+  { id: "royal", label: "الملكي (كحلي وذهبي)", hint: "الطابع المؤسسي الرسمي" },
+  { id: "modern", label: "العصري (زمردي أنيق)", hint: "تصميم حديث بخط جانبي" },
+  { id: "classic", label: "الكلاسيكي (عنابي مزخرف)", hint: "إطار مزدوج بطراز الجامعات" },
+];
+
 export type CertificateData = {
   serial: string;
   recipient_name: string;
@@ -12,6 +20,7 @@ export type CertificateData = {
   signature_title?: string | null;
   signature_url?: string | null;
   honors?: string | null;
+  template?: string | null;
 };
 
 export const PATH_TITLES_EN: Record<string, string> = {
@@ -20,6 +29,7 @@ export const PATH_TITLES_EN: Record<string, string> = {
   upperIntermediate: "Advanced Defense & Analysis Track",
   advanced: "Cybersecurity Mastery — Expert Track",
 };
+
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
@@ -40,15 +50,19 @@ function honorsLabel(data: CertificateData) {
 }
 
 /** Institutional English certificate sheet (A4 landscape ratio). */
-export const CertificateSheet = forwardRef<HTMLDivElement, { data: CertificateData; watermark?: string }>(
-  function CertificateSheet({ data, watermark }, ref) {
-    const title = data.course_title || PATH_TITLES_EN[data.path_id ?? ""] || "Cybersecurity Program";
-    const english = PATH_TITLES_EN[data.path_id ?? ""];
+export const CertificateSheet = forwardRef<
+  HTMLDivElement,
+  { data: CertificateData; watermark?: string; template?: CertificateTemplate }
+>(function CertificateSheet({ data, watermark, template }, ref) {
+  const title = data.course_title || PATH_TITLES_EN[data.path_id ?? ""] || "Cybersecurity Program";
+  const english = PATH_TITLES_EN[data.path_id ?? ""];
+  const theme = (template ?? (data.template as CertificateTemplate | undefined) ?? "royal") as CertificateTemplate;
 
     return (
-      <div ref={ref} dir="ltr" className="cert-sheet">
+      <div ref={ref} dir="ltr" className={`cert-sheet cert-theme-${theme}`}>
         <div className="cert-frame">
           {watermark ? <span className="cert-watermark">{watermark}</span> : null}
+
 
           <header className="cert-head">
             <img src="/mascot.png" alt="Pharaoh Ai emblem" className="cert-emblem" />
@@ -105,5 +119,5 @@ export const CertificateSheet = forwardRef<HTMLDivElement, { data: CertificateDa
         </div>
       </div>
     );
-  },
-);
+});
+

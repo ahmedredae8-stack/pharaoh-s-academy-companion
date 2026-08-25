@@ -766,3 +766,63 @@
     box-shadow: none;
   }
 }
+
+/* ── Certificate templates (3 professional themes) ─────────────────────── */
+.cert-theme-royal {
+  --color-cert-ink: #0b1a2b;
+  --color-cert-paper: #fffdf7;
+  --color-cert-gold: #b08421;
+  --color-cert-gold-soft: #e6cf95;
+  --color-cert-muted: #5b6a7d;
+}
+
+.cert-theme-modern {
+  --color-cert-ink: #10241f;
+  --color-cert-paper: #ffffff;
+  --color-cert-gold: #0f766e;
+  --color-cert-gold-soft: #9fd6cd;
+  --color-cert-muted: #5d6b68;
+  background-image:
+    linear-gradient(90deg, var(--color-cert-gold) 0 10px, transparent 10px),
+    radial-gradient(circle at 100% 0%, rgba(15, 118, 110, 0.09), transparent 45%);
+}
+.cert-theme-modern .cert-frame {
+  border: none;
+  outline: none;
+  border-top: 3px solid var(--color-cert-gold);
+  border-bottom: 3px solid var(--color-cert-gold);
+  border-radius: 0;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+.cert-theme-modern .cert-name {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.cert-theme-modern .cert-seal {
+  border-radius: 12px;
+  outline-offset: 5px;
+}
+
+.cert-theme-classic {
+  --color-cert-ink: #2a0f14;
+  --color-cert-paper: #fdf7f2;
+  --color-cert-gold: #8c1d2f;
+  --color-cert-gold-soft: #d9a441;
+  --color-cert-muted: #6b5750;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(140, 29, 47, 0.05) 0 6px, transparent 6px 12px),
+    radial-gradient(circle at 50% 0%, rgba(217, 164, 65, 0.16), transparent 55%);
+}
+.cert-theme-classic .cert-frame {
+  border: 6px double var(--color-cert-gold);
+  outline: 2px solid var(--color-cert-gold-soft);
+  outline-offset: 8px;
+  border-radius: 2px;
+}
+.cert-theme-classic .cert-kicker {
+  font-variant: small-caps;
+  letter-spacing: 0.5em;
+}
+.cert-theme-classic .cert-name {
+  font-style: italic;
+}
