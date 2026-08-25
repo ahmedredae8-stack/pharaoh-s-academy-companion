@@ -1,5 +1,13 @@
 import { forwardRef } from "react";
 
+export type CertificateTemplate = "royal" | "modern" | "classic";
+
+export const CERTIFICATE_TEMPLATES: { id: CertificateTemplate; label: string; hint: string }[] = [
+  { id: "royal", label: "الملكي (كحلي وذهبي)", hint: "الطابع المؤسسي الرسمي" },
+  { id: "modern", label: "العصري (زمردي أنيق)", hint: "تصميم حديث بخط جانبي" },
+  { id: "classic", label: "الكلاسيكي (عنابي مزخرف)", hint: "إطار مزدوج بطراز الجامعات" },
+];
+
 export type CertificateData = {
   serial: string;
   recipient_name: string;
@@ -12,6 +20,7 @@ export type CertificateData = {
   signature_title?: string | null;
   signature_url?: string | null;
   honors?: string | null;
+  template?: string | null;
 };
 
 export const PATH_TITLES_EN: Record<string, string> = {
@@ -20,6 +29,7 @@ export const PATH_TITLES_EN: Record<string, string> = {
   upperIntermediate: "Advanced Defense & Analysis Track",
   advanced: "Cybersecurity Mastery — Expert Track",
 };
+
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
