@@ -50,15 +50,19 @@ function honorsLabel(data: CertificateData) {
 }
 
 /** Institutional English certificate sheet (A4 landscape ratio). */
-export const CertificateSheet = forwardRef<HTMLDivElement, { data: CertificateData; watermark?: string }>(
-  function CertificateSheet({ data, watermark }, ref) {
-    const title = data.course_title || PATH_TITLES_EN[data.path_id ?? ""] || "Cybersecurity Program";
-    const english = PATH_TITLES_EN[data.path_id ?? ""];
+export const CertificateSheet = forwardRef<
+  HTMLDivElement,
+  { data: CertificateData; watermark?: string; template?: CertificateTemplate }
+>(function CertificateSheet({ data, watermark, template }, ref) {
+  const title = data.course_title || PATH_TITLES_EN[data.path_id ?? ""] || "Cybersecurity Program";
+  const english = PATH_TITLES_EN[data.path_id ?? ""];
+  const theme = (template ?? (data.template as CertificateTemplate | undefined) ?? "royal") as CertificateTemplate;
 
     return (
-      <div ref={ref} dir="ltr" className="cert-sheet">
+      <div ref={ref} dir="ltr" className={`cert-sheet cert-theme-${theme}`}>
         <div className="cert-frame">
           {watermark ? <span className="cert-watermark">{watermark}</span> : null}
+
 
           <header className="cert-head">
             <img src="/mascot.png" alt="Pharaoh Ai emblem" className="cert-emblem" />
