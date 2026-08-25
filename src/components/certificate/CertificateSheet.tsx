@@ -119,5 +119,5 @@ export const CertificateSheet = forwardRef<
         </div>
       </div>
     );
-  },
-);
+});
+
