@@ -1,21 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, Clock, Printer, ShieldCheck, XCircle } from "lucide-react";
+import { Award, Clock, Lock, Printer, ShieldCheck, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { useAccount } from "@/components/account/AccountProvider";
-import { CertificateSheet, type CertificateData } from "@/components/certificate/CertificateSheet";
+import {
+  CERTIFICATE_TEMPLATES,
+  CertificateSheet,
+  type CertificateData,
+  type CertificateTemplate,
+} from "@/components/certificate/CertificateSheet";
 import { DuoLayout } from "@/components/duo/DuoLayout";
+import { verifyPlayPurchase } from "@/lib/billing.functions";
+import { LESSON_COUNTS } from "@/lib/certificate-catalog";
 import { getMyCertificates, issueCertificate } from "@/lib/certificates.functions";
+import { BillingUnavailableError, launchNativePurchase } from "@/lib/native-billing";
+import { CERTIFICATE_PRODUCT, hasProduct, type PathId } from "@/lib/products";
 
-const PATHS = [
+const PATHS: { id: PathId; label: string }[] = [
   { id: "beginner", label: "المسار المبتدئ" },
   { id: "intermediate", label: "المسار المتوسط" },
   { id: "upperIntermediate", label: "فوق المتوسط" },
   { id: "advanced", label: "المسار المتقدّم" },
-] as const;
+];
 
 export const Route = createFileRoute("/certificates")({
   head: () => ({
@@ -50,11 +59,13 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function CertificatesPage() {
-  const { session } = useAccount();
+  const { session, entitlements, account, refresh } = useAccount();
   const queryClient = useQueryClient();
   const fetchCerts = useServerFn(getMyCertificates);
   const requestCert = useServerFn(issueCertificate);
   const [preview, setPreview] = useState<CertificateData | null>(null);
+  const [template, setTemplate] = useState<CertificateTemplate>("royal");
+  const [buying, setBuying] = useState(false);
 
   const certs = useQuery({
     queryKey: ["my-certificates"],
@@ -63,7 +74,7 @@ function CertificatesPage() {
   });
 
   const issue = useMutation({
-    mutationFn: (pathId: (typeof PATHS)[number]["id"]) => requestCert({ data: { pathId } }),
+    mutationFn: (pathId: PathId) => requestCert({ data: { pathId } }),
     onSuccess: (result: any) => {
       if (result?.ok === false) {
         toast.error(`أكمل المسار أولًا (${result.done}/${result.total} درس)`);
@@ -74,6 +85,30 @@ function CertificatesPage() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
+  async function buyCertificate() {
+    setBuying(true);
+    try {
+      const result = await launchNativePurchase(CERTIFICATE_PRODUCT.id, "one_time");
+      await verifyPlayPurchase({
+        data: {
+          productId: result.productId || CERTIFICATE_PRODUCT.id,
+          purchaseToken: result.purchaseToken,
+          kind: "one_time",
+        },
+      });
+      await refresh();
+      toast.success("تم تفعيل الشهادة الرسمية");
+    } catch (error) {
+      if (error instanceof BillingUnavailableError) {
+        toast.info("الشراء متاح داخل تطبيق أندرويد من متجر Google Play");
+      } else {
+        toast.error("تعذّر إتمام الشراء، حاول لاحقًا");
+      }
+    } finally {
+      setBuying(false);
+    }
+  }
 
   if (!session) {
     return (
@@ -91,6 +126,8 @@ function CertificatesPage() {
   }
 
   const rows = (certs.data ?? []) as any[];
+  const progressData = ((account?.progress as any)?.data ?? {}) as Record<string, unknown>;
+  const owned = hasProduct(entitlements, CERTIFICATE_PRODUCT.id);
 
   return (
     <DuoLayout>
@@ -108,20 +145,59 @@ function CertificatesPage() {
           </p>
         </header>
 
+        {!owned ? (
+          <section className="duo-card space-y-3 p-5">
+            <h2 className="flex items-center gap-2 text-sm font-black">
+              <Lock className="h-5 w-5 text-duo-yellow" /> {CERTIFICATE_PRODUCT.title}
+            </h2>
+            <p className="text-sm text-duo-muted">{CERTIFICATE_PRODUCT.subtitle}</p>
+            <button type="button" disabled={buying} className="duo-btn text-sm" onClick={() => void buyCertificate()}>
+              شراء عبر Google Play — {CERTIFICATE_PRODUCT.price}
+            </button>
+            <p className="text-[11px] font-bold text-duo-muted">
+              الدفع عبر Google Play فقط. بعد الشراء يظهر زر «طلب الشهادة» أمام كل مسار أكملته.
+            </p>
+          </section>
+        ) : null}
+
         <section className="duo-card space-y-3 p-5">
-          <h2 className="text-sm font-black">اطلب شهادة مسار</h2>
-          <div className="flex flex-wrap gap-2">
-            {PATHS.map((path) => (
-              <button
-                key={path.id}
-                type="button"
-                disabled={issue.isPending}
-                onClick={() => issue.mutate(path.id)}
-                className="duo-btn text-sm"
-              >
-                {path.label}
-              </button>
-            ))}
+          <h2 className="text-sm font-black">طلب شهادة بعد إنهاء المسار</h2>
+          <div className="space-y-2">
+            {PATHS.map((path) => {
+              const total = LESSON_COUNTS[path.id];
+              const done = Math.max(0, Number(progressData[`${path.id}UnlockedLesson`] ?? 0));
+              const completed = done >= total;
+              const already = rows.some((row) => row.path_id === path.id);
+              return (
+                <div
+                  key={path.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-duo-surface-2 p-3"
+                >
+                  <div>
+                    <p className="text-sm font-black">{path.label}</p>
+                    <p className="text-xs text-duo-muted">
+                      {Math.min(done, total)}/{total} درس
+                    </p>
+                  </div>
+                  {already ? (
+                    <span className="text-xs font-black text-duo-muted">تم الطلب</span>
+                  ) : !completed ? (
+                    <span className="text-xs font-black text-duo-muted">أكمل المسار لفتح الطلب</span>
+                  ) : !owned ? (
+                    <span className="text-xs font-black text-duo-yellow">يتطلّب الشهادة الرسمية</span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={issue.isPending}
+                      onClick={() => issue.mutate(path.id)}
+                      className="duo-btn text-sm"
+                    >
+                      طلب الشهادة
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -152,7 +228,14 @@ function CertificatesPage() {
             ) : null}
 
             <div className="flex flex-wrap gap-2">
-              <button type="button" className="duo-btn text-sm" onClick={() => setPreview(cert)}>
+              <button
+                type="button"
+                className="duo-btn text-sm"
+                onClick={() => {
+                  setPreview(cert);
+                  setTemplate((cert.template as CertificateTemplate) ?? "royal");
+                }}
+              >
                 معاينة الشهادة
               </button>
               {cert.status === "approved" ? (
@@ -161,6 +244,7 @@ function CertificatesPage() {
                   className="duo-btn text-sm"
                   onClick={() => {
                     setPreview(cert);
+                    setTemplate((cert.template as CertificateTemplate) ?? "royal");
                     setTimeout(() => window.print(), 250);
                   }}
                 >
@@ -170,12 +254,28 @@ function CertificatesPage() {
             </div>
 
             {preview?.serial === cert.serial ? (
-              <div className="overflow-x-auto">
-                {cert.status === "approved" ? (
-                  <CertificateSheet data={cert} />
-                ) : (
-                  <CertificateSheet data={cert} watermark="PENDING REVIEW" />
-                )}
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {CERTIFICATE_TEMPLATES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setTemplate(item.id)}
+                      className={`rounded-full px-3 py-1 text-[11px] font-black ${
+                        template === item.id ? "bg-duo-green text-duo-ink" : "bg-duo-surface-2 text-duo-muted"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="overflow-x-auto">
+                  {cert.status === "approved" ? (
+                    <CertificateSheet data={{ ...cert, template }} />
+                  ) : (
+                    <CertificateSheet data={{ ...cert, template }} watermark="PENDING REVIEW" />
+                  )}
+                </div>
               </div>
             ) : null}
           </article>
