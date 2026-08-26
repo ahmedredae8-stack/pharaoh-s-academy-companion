@@ -1,14 +1,12 @@
-name: Android (build + Play upload)
+name: Android (unsigned APK + AAB)
 
 on:
   workflow_dispatch:
     inputs:
-      track:
-        description: "مسار الرفع في Play Console"
+      version_name:
+        description: "اسم الإصدار (versionName)"
         required: false
-        default: "internal"
-        type: choice
-        options: [internal, alpha, beta, production]
+        default: "1.2.0"
   push:
     tags:
       - "v*"
@@ -18,7 +16,7 @@ env:
   APP_NAME: فرعون Ai
   COMPILE_SDK: "36"
   TARGET_SDK: "36"
-  VERSION_NAME: "1.1.0"
+  MIN_SDK: "23"
 
 jobs:
   build:
@@ -40,18 +38,19 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      # -------------------------------------------------------------
-      # 1. التأكد من وجود مكتبة الدفع (Google Play Billing)
-      # -------------------------------------------------------------
-      - name: Check for Play Store Billing / Purchases library
+      # --------------------------------------------------------------
+      # فحص توافق سياسة Google Play (لا نصّ مرور مكشوف / لا أدوات هجوم)
+      # --------------------------------------------------------------
+      - name: Play policy guardrails
         run: |
-          echo "🔍 الجاري الفحص عن مكتبات الشراء والدفع من متجر بلاي..."
-          if grep -E '"@capgo/capacitor-purchases"|"@capacitor-community/inapp-purchase"|"cordova-plugin-purchase"|"billing"' package.json > /dev/null; then
-            echo "✅ تم العثور على مكتبة الدفع بنجاح!"
-          else
-            echo "❌ خطأ قاتل: لم يتم العثور على أي مكتبة دفع لمتجر بلاي في package.json!"
-            exit 1
+          echo "🔍 فحص إعدادات الأمان..."
+          if grep -q "cleartext: true" capacitor.config.ts; then
+            echo "❌ cleartext مفعّل — مرفوض في سياسة Google Play"; exit 1
           fi
+          if grep -qE '"\*"' capacitor.config.ts; then
+            echo "❌ allowNavigation يحتوي على * — مرفوض أمنيًا"; exit 1
+          fi
+          echo "✅ الإعدادات آمنة"
 
       - name: Build web bundle
         run: bun run build
@@ -65,18 +64,20 @@ jobs:
       - name: Create assets folder
         run: mkdir -p android/app/src/main/assets
 
-      # -------------------------------------------------------------
-      # 2. رفع versionCode تلقائيًا و SDK إلى 36
-      # -------------------------------------------------------------
-      - name: Compute versionCode
+      - name: Compute version
         id: version
-        run: echo "code=$(( 100 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "code=$(( 100 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
+          NAME="${{ github.event.inputs.version_name }}"
+          if [ -z "$NAME" ]; then NAME="1.2.${{ github.run_number }}"; fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - name: Update Target & Compile SDK
         run: |
           if [ -f "android/variables.gradle" ]; then
             sed -i -E "s/targetSdkVersion\s*=\s*[0-9]+/targetSdkVersion = ${TARGET_SDK}/" android/variables.gradle
             sed -i -E "s/compileSdkVersion\s*=\s*[0-9]+/compileSdkVersion = ${COMPILE_SDK}/" android/variables.gradle
+            sed -i -E "s/minSdkVersion\s*=\s*[0-9]+/minSdkVersion = ${MIN_SDK}/" android/variables.gradle
           fi
 
       - name: Generate app icons
@@ -85,20 +86,36 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
+      - name: Harden network security config
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/network_security_config.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+            <base-config cleartextTrafficPermitted="false" />
+          </network-security-config>
+          XML
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:usesCleartextTraffic="true"/android:usesCleartextTraffic="false"/' $MANIFEST || true
+          grep -q "networkSecurityConfig" $MANIFEST || \
+            sed -i 's|<application |<application android:networkSecurityConfig="@xml/network_security_config" |' $MANIFEST
+          grep -n "usesCleartextTraffic\|networkSecurityConfig" $MANIFEST || true
+
       - name: Set version, applicationId, app name and SDK
         working-directory: android/app
         run: |
           CODE="${{ steps.version.outputs.code }}"
+          NAME="${{ steps.version.outputs.name }}"
           if [ -f "build.gradle.kts" ]; then
             sed -i -E "s/versionCode\s*=\s*.*/versionCode = ${CODE}/" build.gradle.kts
-            sed -i -E "s/versionName\s*=\s*\".*\"/versionName = \"${VERSION_NAME}\"/" build.gradle.kts
+            sed -i -E "s/versionName\s*=\s*\".*\"/versionName = \"${NAME}\"/" build.gradle.kts
             sed -i -E "s/applicationId\s*=\s*\".*\"/applicationId = \"${APP_ID}\"/" build.gradle.kts
             sed -i -E "s/targetSdk\s*=\s*[0-9]+/targetSdk = ${TARGET_SDK}/" build.gradle.kts || true
             sed -i -E "s/compileSdk\s*=\s*[0-9]+/compileSdk = ${COMPILE_SDK}/" build.gradle.kts || true
             GRADLE_FILE="build.gradle.kts"
           elif [ -f "build.gradle" ]; then
             sed -i -E "s/versionCode[[:space:]]+.*/versionCode ${CODE}/" build.gradle
-            sed -i -E "s/versionName[[:space:]]+\".*\"/versionName \"${VERSION_NAME}\"/" build.gradle
+            sed -i -E "s/versionName[[:space:]]+\".*\"/versionName \"${NAME}\"/" build.gradle
             sed -i -E "s/applicationId[[:space:]]+\".*\"/applicationId \"${APP_ID}\"/" build.gradle
             sed -i -E "s/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion ${TARGET_SDK}/" build.gradle || true
             sed -i -E "s/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion ${COMPILE_SDK}/" build.gradle || true
@@ -109,79 +126,23 @@ jobs:
           sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${APP_NAME}</string>|" src/main/res/values/strings.xml || true
           grep -E "applicationId|versionCode|versionName" $GRADLE_FILE
 
-      # -------------------------------------------------------------
-      # 3. مفتاح التوقيع (اختياري): لو الأسرار موجودة يتم بناء نسخة موقّعة
-      # -------------------------------------------------------------
-      - name: Decode keystore
-        id: keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
-            echo "signed=true" >> "$GITHUB_OUTPUT"
-            echo "🔐 سيتم إنتاج نسخة موقّعة"
-          else
-            echo "signed=false" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ لا يوجد مفتاح توقيع — سيتم إنتاج نسخة غير موقّعة"
-          fi
-
-      - name: Build signed release AAB + APK
-        if: steps.keystore.outputs.signed == 'true'
-        working-directory: android
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          chmod +x ./gradlew
-          ./gradlew bundleRelease assembleRelease \
-            -Pandroid.injected.signing.store.file=$PWD/app/release.keystore \
-            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
-
+      # --------------------------------------------------------------
+      # بناء غير موقّع: APK + AAB
+      # --------------------------------------------------------------
       - name: Build unsigned release AAB + APK
-        if: steps.keystore.outputs.signed != 'true'
         working-directory: android
         run: |
           chmod +x ./gradlew
-          ./gradlew bundleRelease assembleRelease
+          ./gradlew clean bundleRelease assembleRelease --no-daemon
+
+      - name: List outputs
+        run: |
+          find android/app/build/outputs -name "*.aab" -o -name "*.apk" | sort
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pharaoh-android-${{ steps.keystore.outputs.signed == 'true' && 'signed' || 'unsigned' }}
+          name: pharaoh-android-unsigned-v${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
+          if-no-files-found: error
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/release/*.apk
-
-      # -------------------------------------------------------------
-      # 4. الرفع التلقائي إلى Google Play Console
-      # -------------------------------------------------------------
-      - name: Write Play service account
-        id: play
-        env:
-          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-        run: |
-          if [ -n "$PLAY_JSON" ] && [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
-            echo "$PLAY_JSON" > play-service-account.json
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ تخطّي الرفع: يلزم مفتاح توقيع + PLAY_SERVICE_ACCOUNT_JSON"
-          fi
-
-      - name: Upload to Google Play
-        if: steps.play.outputs.ready == 'true'
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJson: play-service-account.json
-          packageName: pharaoh.ar
-          releaseFiles: android/app/build/outputs/bundle/release/*.aab
-          track: ${{ github.event.inputs.track || 'internal' }}
-          status: completed
-          changesNotSentForReview: false
-
-      - name: Clean secrets from runner
-        if: always()
-        run: rm -f play-service-account.json android/app/release.keystore
