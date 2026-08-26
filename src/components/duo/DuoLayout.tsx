@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { useAccount } from "@/components/account/AccountProvider";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { usePushRegistration } from "@/hooks/use-push-registration";
 
 const NAV = [
   { to: "/", label: "الرئيسية", icon: Home },
@@ -22,12 +24,15 @@ export function DuoLayout({
   stats?: { xp?: number; streak?: number; hearts?: number };
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { isPro } = useAccount();
+  const { isPro, session } = useAccount();
+
+  usePushRegistration(Boolean(session));
 
   useEffect(() => {
     document.documentElement.lang = "ar";
     document.documentElement.dir = "rtl";
   }, []);
+
 
   return (
     <div dir="rtl" className="duo-screen pb-24">
