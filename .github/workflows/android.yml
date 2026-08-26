@@ -16,7 +16,7 @@ env:
   APP_NAME: فرعون Ai
   COMPILE_SDK: "36"
   TARGET_SDK: "36"
-  MIN_SDK: "23"
+  MIN_SDK: "24"
 
 jobs:
   build:
