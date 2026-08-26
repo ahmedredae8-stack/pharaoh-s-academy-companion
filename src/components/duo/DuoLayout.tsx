@@ -54,7 +54,9 @@ export function DuoLayout({
                 PRO
               </span>
             ) : null}
+            <NotificationBell enabled={Boolean(session)} />
           </div>
+
         </div>
       </header>
 
