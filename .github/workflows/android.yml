@@ -17,6 +17,10 @@ env:
   COMPILE_SDK: "36"
   TARGET_SDK: "36"
   MIN_SDK: "24"
+  # أحدث إصدار من مكتبة الدفع الرسمية لمتجر Google Play
+  BILLING_VERSION: "8.0.0"
+  # رقم الإصدار يبدأ من 1000
+  VERSION_CODE_BASE: "1000"
 
 jobs:
   build:
