@@ -100,33 +100,9 @@ jobs:
           [ -f "$GRADLE_FILE" ] || GRADLE_FILE=android/app/build.gradle.kts
           echo "📦 استخدام $GRADLE_FILE"
           if [ "${GRADLE_FILE##*.}" = "kts" ]; then
-            cat >> "$GRADLE_FILE" <<EOF
-
-dependencies {
-    implementation("com.android.billingclient:billing-ktx:${BILLING_VERSION}")
-    implementation("com.google.android.play:review:2.0.2")
-}
-configurations.all {
-    resolutionStrategy {
-        force("com.android.billingclient:billing:${BILLING_VERSION}")
-        force("com.android.billingclient:billing-ktx:${BILLING_VERSION}")
-    }
-}
-EOF
+            printf '\ndependencies {\n    implementation("com.android.billingclient:billing-ktx:%s")\n    implementation("com.google.android.play:review:2.0.2")\n}\nconfigurations.all {\n    resolutionStrategy {\n        force("com.android.billingclient:billing:%s")\n        force("com.android.billingclient:billing-ktx:%s")\n    }\n}\n' "$BILLING_VERSION" "$BILLING_VERSION" "$BILLING_VERSION" >> "$GRADLE_FILE"
           else
-            cat >> "$GRADLE_FILE" <<EOF
-
-dependencies {
-    implementation "com.android.billingclient:billing-ktx:${BILLING_VERSION}"
-    implementation "com.google.android.play:review:2.0.2"
-}
-configurations.all {
-    resolutionStrategy {
-        force "com.android.billingclient:billing:${BILLING_VERSION}"
-        force "com.android.billingclient:billing-ktx:${BILLING_VERSION}"
-    }
-}
-EOF
+            printf '\ndependencies {\n    implementation "com.android.billingclient:billing-ktx:%s"\n    implementation "com.google.android.play:review:2.0.2"\n}\nconfigurations.all {\n    resolutionStrategy {\n        force "com.android.billingclient:billing:%s"\n        force "com.android.billingclient:billing-ktx:%s"\n    }\n}\n' "$BILLING_VERSION" "$BILLING_VERSION" "$BILLING_VERSION" >> "$GRADLE_FILE"
           fi
           grep -n "billingclient" "$GRADLE_FILE"
 
