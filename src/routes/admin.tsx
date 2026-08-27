@@ -6,9 +6,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useAccount } from "@/components/account/AccountProvider";
-import { CertificateSheet, type CertificateData } from "@/components/certificate/CertificateSheet";
+import {
+  CERTIFICATE_TEMPLATES,
+  CertificateSheet,
+  type CertificateData,
+  type CertificateTemplate,
+} from "@/components/certificate/CertificateSheet";
 import { DuoLayout } from "@/components/duo/DuoLayout";
-import { adminUpdateCertificateDesign } from "@/lib/admin-certificates.functions";
+import { adminIssueCertificate, adminUpdateCertificateDesign } from "@/lib/admin-certificates.functions";
+
 import {
   adminCreateRedeemCodes,
   adminListCertificates,
