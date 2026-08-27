@@ -71,7 +71,7 @@ jobs:
       - name: Compute version
         id: version
         run: |
-          echo "code=$(( 100 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
+          echo "code=$(( ${VERSION_CODE_BASE} + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
           NAME="${{ github.event.inputs.version_name }}"
           if [ -z "$NAME" ]; then NAME="1.2.${{ github.run_number }}"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
