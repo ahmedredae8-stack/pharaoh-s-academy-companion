@@ -90,6 +90,53 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
+      # --------------------------------------------------------------
+      # أحدث مكتبات الدفع الرسمية لمتجر Google Play
+      # --------------------------------------------------------------
+      - name: Add latest Google Play Billing libraries
+        run: |
+          set -e
+          GRADLE_FILE=android/app/build.gradle
+          [ -f "$GRADLE_FILE" ] || GRADLE_FILE=android/app/build.gradle.kts
+          echo "📦 استخدام $GRADLE_FILE"
+          if [ "${GRADLE_FILE##*.}" = "kts" ]; then
+            cat >> "$GRADLE_FILE" <<EOF
+
+dependencies {
+    implementation("com.android.billingclient:billing-ktx:${BILLING_VERSION}")
+    implementation("com.google.android.play:review:2.0.2")
+}
+configurations.all {
+    resolutionStrategy {
+        force("com.android.billingclient:billing:${BILLING_VERSION}")
+        force("com.android.billingclient:billing-ktx:${BILLING_VERSION}")
+    }
+}
+EOF
+          else
+            cat >> "$GRADLE_FILE" <<EOF
+
+dependencies {
+    implementation "com.android.billingclient:billing-ktx:${BILLING_VERSION}"
+    implementation "com.google.android.play:review:2.0.2"
+}
+configurations.all {
+    resolutionStrategy {
+        force "com.android.billingclient:billing:${BILLING_VERSION}"
+        force "com.android.billingclient:billing-ktx:${BILLING_VERSION}"
+    }
+}
+EOF
+          fi
+          grep -n "billingclient" "$GRADLE_FILE"
+
+      - name: Ensure Billing permission
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          grep -q "com.android.vending.BILLING" $MANIFEST || \
+            sed -i 's|<application |<uses-permission android:name="com.android.vending.BILLING" />\n    <application |' $MANIFEST
+          grep -n "BILLING" $MANIFEST || true
+
       - name: Harden network security config
         run: |
           mkdir -p android/app/src/main/res/xml
