@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CertPreviewRouteImport } from './routes/cert-preview'
 import { Route as CertificatesRouteImport } from './routes/certificates'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as CoursesRouteImport } from './routes/courses'
@@ -35,6 +36,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CertPreviewRoute = CertPreviewRouteImport.update({
+  id: '/cert-preview',
+  path: '/cert-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CertificatesRoute = CertificatesRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/cert-preview': typeof CertPreviewRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/cert-preview': typeof CertPreviewRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/cert-preview': typeof CertPreviewRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cert-preview'
     | '/certificates'
     | '/community'
     | '/courses'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cert-preview'
     | '/certificates'
     | '/community'
     | '/courses'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cert-preview'
     | '/certificates'
     | '/community'
     | '/courses'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  CertPreviewRoute: typeof CertPreviewRoute
   CertificatesRoute: typeof CertificatesRoute
   CommunityRoute: typeof CommunityRoute
   CoursesRoute: typeof CoursesRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cert-preview': {
+      id: '/cert-preview'
+      path: '/cert-preview'
+      fullPath: '/cert-preview'
+      preLoaderRoute: typeof CertPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/certificates': {
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  CertPreviewRoute: CertPreviewRoute,
   CertificatesRoute: CertificatesRoute,
   CommunityRoute: CommunityRoute,
   CoursesRoute: CoursesRoute,

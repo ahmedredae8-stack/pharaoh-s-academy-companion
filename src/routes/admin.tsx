@@ -6,9 +6,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useAccount } from "@/components/account/AccountProvider";
-import { CertificateSheet, type CertificateData } from "@/components/certificate/CertificateSheet";
+import {
+  CERTIFICATE_TEMPLATES,
+  CertificateSheet,
+  type CertificateData,
+  type CertificateTemplate,
+} from "@/components/certificate/CertificateSheet";
 import { DuoLayout } from "@/components/duo/DuoLayout";
-import { adminUpdateCertificateDesign } from "@/lib/admin-certificates.functions";
+import { adminIssueCertificate, adminUpdateCertificateDesign } from "@/lib/admin-certificates.functions";
+
 import {
   adminCreateRedeemCodes,
   adminListCertificates,
@@ -51,11 +57,26 @@ function AdminPage() {
   const createCodes = useServerFn(adminCreateRedeemCodes);
   const listCodes = useServerFn(adminListRedeemCodes);
 
-  const [tab, setTab] = useState<"certs" | "users" | "codes">("certs");
+  const [tab, setTab] = useState<"certs" | "issue" | "users" | "codes">("certs");
   const [userQuery, setUserQuery] = useState("");
   const [editing, setEditing] = useState<any>(null);
   const [codeProduct, setCodeProduct] = useState("pharaoh_pro_lifetime");
   const [codeCount, setCodeCount] = useState(5);
+  const [issueForm, setIssueForm] = useState({
+    userId: "",
+    pathId: "custom",
+    courseTitle: "Applied Cybersecurity — Practitioner Track",
+    recipientName: "",
+    lessonsCompleted: 0,
+    quizAverage: 100,
+    honors: "",
+    signatureName: "",
+    signatureTitle: "Program Director, Pharaoh Ai",
+    signatureUrl: "",
+    template: "royal" as CertificateTemplate,
+    approve: true,
+  });
+
 
   const admin = useQuery({ queryKey: ["am-i-admin"], queryFn: () => checkAdmin(), enabled: Boolean(session) });
   const isAdmin = Boolean((admin.data as any)?.admin);
