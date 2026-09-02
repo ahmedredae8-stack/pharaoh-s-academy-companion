@@ -135,12 +135,7 @@ jobs:
       - name: Harden network security config
         run: |
           mkdir -p android/app/src/main/res/xml
-          cat > android/app/src/main/res/xml/network_security_config.xml <<'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <network-security-config>
-            <base-config cleartextTrafficPermitted="false" />
-          </network-security-config>
-          XML
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<network-security-config>\n  <base-config cleartextTrafficPermitted="false" />\n</network-security-config>\n' > android/app/src/main/res/xml/network_security_config.xml
           MANIFEST=android/app/src/main/AndroidManifest.xml
           sed -i 's/android:usesCleartextTraffic="true"/android:usesCleartextTraffic="false"/' $MANIFEST || true
           grep -q "networkSecurityConfig" $MANIFEST || \
