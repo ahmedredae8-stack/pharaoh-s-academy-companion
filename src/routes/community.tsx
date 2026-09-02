@@ -15,6 +15,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { safeDisplayName } from "@/lib/utils";
+
 import { useAccount } from "@/components/account/AccountProvider";
 import { Avatar } from "@/components/community/Avatar";
 import { DuoLayout } from "@/components/duo/DuoLayout";
@@ -228,9 +230,9 @@ function FeedTab() {
       {posts.map((post: any) => (
         <article key={post.id} className="duo-card space-y-3 p-4">
           <header className="flex items-center gap-2">
-            <Avatar value={post.avatar_url} name={post.display_name} />
+            <Avatar value={post.avatar_url} name={safeDisplayName(post.display_name)} />
             <div className="flex-1">
-              <p className="text-sm font-black">{post.display_name}</p>
+              <p className="text-sm font-black">{safeDisplayName(post.display_name)}</p>
               <p className="text-[11px] text-duo-muted">{formatDate(post.created_at)}</p>
             </div>
           </header>
@@ -293,9 +295,9 @@ function Comments({ postId }: { postId: string }) {
     <div className="space-y-2 border-t-2 border-duo-line pt-3">
       {data.map((c: any) => (
         <div key={c.id} className="flex items-start gap-2">
-          <Avatar value={c.avatar_url} name={c.display_name} size={28} />
+          <Avatar value={c.avatar_url} name={safeDisplayName(c.display_name)} size={28} />
           <div className="flex-1 rounded-xl bg-duo-surface-2 p-2">
-            <p className="text-xs font-black">{c.display_name}</p>
+            <p className="text-xs font-black">{safeDisplayName(c.display_name)}</p>
             <p className="text-sm">{c.content}</p>
           </div>
         </div>
@@ -401,10 +403,10 @@ function StoryBubble({ story }: { story: any }) {
           {url ? (
             <img src={url} alt="حالة" className="h-14 w-14 rounded-full object-cover" />
           ) : (
-            <Avatar value={story.avatar_url} name={story.display_name} size={56} />
+            <Avatar value={story.avatar_url} name={safeDisplayName(story.display_name)} size={56} />
           )}
         </span>
-        <span className="truncate">{story.display_name}</span>
+        <span className="truncate">{safeDisplayName(story.display_name)}</span>
       </button>
       {open ? (
         <div
@@ -468,8 +470,8 @@ function FriendsTab() {
           <h2 className="text-sm font-black">نتائج البحث</h2>
           {results.map((person) => (
             <div key={person.id} className="flex items-center gap-2">
-              <Avatar value={person.avatar_url} name={person.display_name} size={36} />
-              <span className="flex-1 text-sm font-bold">{person.display_name ?? "متدرّب"}</span>
+              <Avatar value={person.avatar_url} name={safeDisplayName(person.display_name)} size={36} />
+              <span className="flex-1 text-sm font-bold">{safeDisplayName(person.display_name)}</span>
               {person.friend_status === "none" ? (
                 <button
                   onClick={async () => {
@@ -500,8 +502,8 @@ function FriendsTab() {
           <h2 className="text-sm font-black">طلبات واردة</h2>
           {incoming.map((f: any) => (
             <div key={f.friendship_id} className="flex items-center gap-2">
-              <Avatar value={f.avatar_url} name={f.display_name} size={36} />
-              <span className="flex-1 text-sm font-bold">{f.display_name}</span>
+              <Avatar value={f.avatar_url} name={safeDisplayName(f.display_name)} size={36} />
+              <span className="flex-1 text-sm font-bold">{safeDisplayName(f.display_name)}</span>
               <button
                 onClick={async () => {
                   await respondFriendRequest({ data: { friendshipId: f.friendship_id, accept: true } });
@@ -530,11 +532,11 @@ function FriendsTab() {
         {accepted.length === 0 ? <p className="text-xs text-duo-muted">لا يوجد أصدقاء بعد — ابحث وأرسل طلبًا.</p> : null}
         {accepted.map((f: any) => (
           <div key={f.friendship_id} className="flex items-center gap-2">
-            <Avatar value={f.avatar_url} name={f.display_name} size={36} />
-            <span className="flex-1 text-sm font-bold">{f.display_name}</span>
+            <Avatar value={f.avatar_url} name={safeDisplayName(f.display_name)} size={36} />
+            <span className="flex-1 text-sm font-bold">{safeDisplayName(f.display_name)}</span>
             <button
               onClick={async () => {
-                if (!confirm(`حظر ${f.display_name}؟`)) return;
+                if (!confirm(`حظر ${safeDisplayName(f.display_name)}؟`)) return;
                 await blockUser({ data: { userId: f.user_id, block: true } });
                 await queryClient.invalidateQueries({ queryKey: ["friends"] });
                 toast.success("تم الحظر");
@@ -580,8 +582,8 @@ function MessagesTab() {
             onClick={() => setActive({ id: f.user_id, name: f.display_name })}
             className="flex w-full items-center gap-2 rounded-xl p-2 text-right hover:bg-duo-surface-2"
           >
-            <Avatar value={f.avatar_url} name={f.display_name} size={36} />
-            <span className="flex-1 text-sm font-bold">{f.display_name}</span>
+            <Avatar value={f.avatar_url} name={safeDisplayName(f.display_name)} size={36} />
+            <span className="flex-1 text-sm font-bold">{safeDisplayName(f.display_name)}</span>
             {f.unread ? (
               <span className="rounded-full bg-duo-red px-2 text-[10px] font-black text-white">{f.unread}</span>
             ) : null}
