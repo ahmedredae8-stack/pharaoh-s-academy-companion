@@ -110,6 +110,17 @@ function AdminPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const issueFn = useServerFn(adminIssueCertificate);
+  const issueMut = useMutation({
+    mutationFn: () => issueFn({ data: issueForm }),
+    onSuccess: (result: any) => {
+      toast.success(`تم إصدار الشهادة: ${result?.serial ?? ""}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-certs"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const banMut = useMutation({
     mutationFn: (input: { userId: string; banned: boolean; reason: string }) => setBan({ data: input }),
     onSuccess: () => {
