@@ -6,6 +6,7 @@ import { Medal, Trophy } from "lucide-react";
 import { useAccount } from "@/components/account/AccountProvider";
 import { DuoLayout } from "@/components/duo/DuoLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { safeDisplayName } from "@/lib/utils";
 
 type Row = {
   user_id: string;
@@ -86,7 +87,7 @@ function LeaderboardPage() {
                 <span className="grid h-10 w-10 place-items-center rounded-full bg-duo-surface-2 text-xl">
                   {row.avatar_url ?? "🐱"}
                 </span>
-                <span className="flex-1 truncate font-bold">{row.display_name}</span>
+                <span className="flex-1 truncate font-bold">{safeDisplayName(row.display_name)}</span>
                 <span className="font-black text-duo-blue">{row.xp} XP</span>
               </li>
             );

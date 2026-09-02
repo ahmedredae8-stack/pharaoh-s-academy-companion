@@ -19,8 +19,8 @@ env:
   MIN_SDK: "24"
   # أحدث إصدار من مكتبة الدفع الرسمية لمتجر Google Play
   BILLING_VERSION: "8.0.0"
-  # رقم الإصدار يبدأ من 1005 (آخر إصدار مرفوع كان 1004)
-  VERSION_CODE_BASE: "1005"
+  # رقم الإصدار يبدأ من 1010
+  VERSION_CODE_BASE: "1010"
 
 jobs:
   build:
@@ -106,6 +106,25 @@ jobs:
           fi
           grep -n "billingclient" "$GRADLE_FILE"
 
+      # فرض نسخة الدفع على كل الوحدات (الإضافات تجلب نسخة قديمة 4.x)
+      - name: Force Billing version for all modules
+        run: |
+          set -e
+          ROOT=android/build.gradle
+          [ -f "$ROOT" ] || ROOT=android/build.gradle.kts
+          if [ "${ROOT##*.}" = "kts" ]; then
+            printf '\nallprojects {\n    configurations.all {\n        resolutionStrategy {\n            force("com.android.billingclient:billing:%s")\n            force("com.android.billingclient:billing-ktx:%s")\n        }\n    }\n}\n' "$BILLING_VERSION" "$BILLING_VERSION" >> "$ROOT"
+          else
+            printf '\nallprojects {\n    configurations.all {\n        resolutionStrategy {\n            force "com.android.billingclient:billing:%s"\n            force "com.android.billingclient:billing-ktx:%s"\n        }\n    }\n}\n' "$BILLING_VERSION" "$BILLING_VERSION" >> "$ROOT"
+          fi
+          tail -12 "$ROOT"
+
+      - name: Verify resolved Billing version
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath --no-daemon | grep -i billing || true
+
       - name: Ensure Billing permission
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
@@ -116,12 +135,7 @@ jobs:
       - name: Harden network security config
         run: |
           mkdir -p android/app/src/main/res/xml
-          cat > android/app/src/main/res/xml/network_security_config.xml <<'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <network-security-config>
-            <base-config cleartextTrafficPermitted="false" />
-          </network-security-config>
-          XML
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<network-security-config>\n  <base-config cleartextTrafficPermitted="false" />\n</network-security-config>\n' > android/app/src/main/res/xml/network_security_config.xml
           MANIFEST=android/app/src/main/AndroidManifest.xml
           sed -i 's/android:usesCleartextTraffic="true"/android:usesCleartextTraffic="false"/' $MANIFEST || true
           grep -q "networkSecurityConfig" $MANIFEST || \

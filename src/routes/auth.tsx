@@ -66,6 +66,9 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [useCode, setUseCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const strength = useMemo(() => scorePassword(password), [password]);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
@@ -118,6 +121,46 @@ function AuthPage() {
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذّر إتمام العملية");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendCode() {
+    if (!emailValid) {
+      toast.error("أدخل بريدًا إلكترونيًا صحيحًا");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      });
+      if (error) throw error;
+      setCodeSent(true);
+      toast.success("أرسلنا رمز الدخول إلى بريدك الإلكتروني");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر إرسال الرمز");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode() {
+    const token = otp.replace(/\D/g, "");
+    if (token.length < 6) {
+      toast.error("أدخل الرمز المكوّن من 6 أرقام");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+      if (error) throw error;
+      toast.success("تم تسجيل الدخول");
+      void navigate({ to: destination });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "الرمز غير صحيح أو منتهي");
     } finally {
       setBusy(false);
     }
@@ -198,7 +241,71 @@ function AuthPage() {
 
         <div className="my-4 text-center text-xs font-bold text-duo-muted">أو</div>
 
-        <form onSubmit={submit} className="space-y-3">
+        <button
+          type="button"
+          onClick={() => {
+            setUseCode((v) => !v);
+            setCodeSent(false);
+            setOtp("");
+          }}
+          className="mb-3 w-full rounded-2xl border-2 border-duo-line px-4 py-2 text-xs font-black text-duo-blue"
+        >
+          {useCode ? "الدخول بكلمة المرور" : "الدخول برمز يصل إلى بريدك"}
+        </button>
+
+        {useCode ? (
+          <div className="space-y-3">
+            <div className="relative">
+              <Mail className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-duo-muted" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="البريد الإلكتروني"
+                className="w-full rounded-2xl border-2 border-duo-line bg-duo-surface px-4 py-3 pr-10 text-sm font-bold text-duo-text outline-none focus:border-duo-blue"
+              />
+            </div>
+            {codeSent ? (
+              <>
+                <input
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full rounded-2xl border-2 border-duo-line bg-duo-surface px-4 py-3 text-center font-mono text-lg font-black tracking-[0.5em] text-duo-text outline-none focus:border-duo-blue"
+                />
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void verifyCode()}
+                  className="duo-btn w-full px-4 py-3 text-sm disabled:opacity-50"
+                >
+                  تأكيد الرمز والدخول
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void sendCode()}
+                  className="w-full text-center text-xs font-bold text-duo-muted underline"
+                >
+                  إعادة إرسال الرمز
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void sendCode()}
+                className="duo-btn w-full px-4 py-3 text-sm disabled:opacity-50"
+              >
+                إرسال رمز الدخول
+              </button>
+            )}
+          </div>
+        ) : null}
+
+        <form onSubmit={submit} className={`space-y-3 ${useCode ? "hidden" : ""}`}>
           <div className="relative">
             <Mail className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-duo-muted" />
             <input

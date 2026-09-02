@@ -110,6 +110,17 @@ function AdminPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const issueFn = useServerFn(adminIssueCertificate);
+  const issueMut = useMutation({
+    mutationFn: () => issueFn({ data: issueForm }),
+    onSuccess: (result: any) => {
+      toast.success(`تم إصدار الشهادة: ${result?.serial ?? ""}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-certs"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const banMut = useMutation({
     mutationFn: (input: { userId: string; banned: boolean; reason: string }) => setBan({ data: input }),
     onSuccess: () => {
@@ -181,6 +192,7 @@ function AdminPage() {
             {(
               [
                 ["certs", "الشهادات"],
+                ["issue", "إصدار يدوي"],
                 ["users", "المستخدمون"],
                 ["codes", "أكواد التفعيل"],
               ] as const
@@ -252,6 +264,7 @@ function AdminPage() {
                         signatureName: String(form.get("signatureName") ?? ""),
                         signatureTitle: String(form.get("signatureTitle") ?? ""),
                         signatureUrl: String(form.get("signatureUrl") ?? ""),
+                        template: String(form.get("template") ?? "royal"),
                       });
                     }}
                   >
@@ -261,6 +274,20 @@ function AdminPage() {
                     <Field name="signatureName" label="اسم الموقّع" defaultValue={cert.signature_name ?? ""} />
                     <Field name="signatureTitle" label="صفة الموقّع" defaultValue={cert.signature_title ?? ""} />
                     <Field name="signatureUrl" label="رابط صورة التوقيع" defaultValue={cert.signature_url ?? ""} />
+                    <label className="block text-xs font-black text-duo-muted">
+                      قالب الشهادة
+                      <select
+                        name="template"
+                        defaultValue={cert.template ?? "royal"}
+                        className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
+                      >
+                        {CERTIFICATE_TEMPLATES.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <button type="submit" disabled={designMut.isPending} className="duo-btn text-sm">
                       حفظ التصميم
                     </button>
@@ -268,11 +295,88 @@ function AdminPage() {
                 ) : null}
 
                 <div className="overflow-x-auto">
-                  <CertificateSheet data={cert as CertificateData} />
+                  <CertificateSheet data={cert as CertificateData} template={cert.template ?? "royal"} />
                 </div>
               </article>
             ))
           : null}
+
+        {tab === "issue" ? (
+          <section className="duo-card space-y-4 p-5">
+            <h2 className="text-base font-black">إصدار شهادة يدويًا</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <IssueField label="معرّف المستخدم (UUID)" value={issueForm.userId} onChange={(v) => setIssueForm((f) => ({ ...f, userId: v }))} />
+              <IssueField label="اسم المتدرّب" value={issueForm.recipientName} onChange={(v) => setIssueForm((f) => ({ ...f, recipientName: v }))} />
+              <IssueField label="اسم البرنامج" value={issueForm.courseTitle} onChange={(v) => setIssueForm((f) => ({ ...f, courseTitle: v }))} />
+              <IssueField label="المسار" value={issueForm.pathId} onChange={(v) => setIssueForm((f) => ({ ...f, pathId: v }))} />
+              <IssueField
+                label="عدد الدروس"
+                value={String(issueForm.lessonsCompleted)}
+                onChange={(v) => setIssueForm((f) => ({ ...f, lessonsCompleted: Number(v) || 0 }))}
+              />
+              <IssueField
+                label="المعدّل %"
+                value={String(issueForm.quizAverage)}
+                onChange={(v) => setIssueForm((f) => ({ ...f, quizAverage: Number(v) || 0 }))}
+              />
+              <IssueField label="مرتبة الشرف" value={issueForm.honors} onChange={(v) => setIssueForm((f) => ({ ...f, honors: v }))} />
+              <IssueField label="اسم الموقّع" value={issueForm.signatureName} onChange={(v) => setIssueForm((f) => ({ ...f, signatureName: v }))} />
+              <IssueField label="صفة الموقّع" value={issueForm.signatureTitle} onChange={(v) => setIssueForm((f) => ({ ...f, signatureTitle: v }))} />
+              <IssueField label="رابط صورة التوقيع" value={issueForm.signatureUrl} onChange={(v) => setIssueForm((f) => ({ ...f, signatureUrl: v }))} />
+              <label className="block text-xs font-black text-duo-muted">
+                القالب
+                <select
+                  value={issueForm.template}
+                  onChange={(e) => setIssueForm((f) => ({ ...f, template: e.target.value as CertificateTemplate }))}
+                  className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
+                >
+                  {CERTIFICATE_TEMPLATES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-xs font-black text-duo-muted">
+                <input
+                  type="checkbox"
+                  checked={issueForm.approve}
+                  onChange={(e) => setIssueForm((f) => ({ ...f, approve: e.target.checked }))}
+                />
+                اعتماد فوري بدون مراجعة
+              </label>
+            </div>
+
+            <button
+              type="button"
+              disabled={issueMut.isPending || !issueForm.userId || !issueForm.recipientName}
+              onClick={() => issueMut.mutate()}
+              className="duo-btn text-sm disabled:opacity-50"
+            >
+              إصدار الشهادة
+            </button>
+
+            <div className="overflow-x-auto">
+              <CertificateSheet
+                template={issueForm.template}
+                data={{
+                  serial: "PH-PREVIEW-0000",
+                  recipient_name: issueForm.recipientName || "Trainee Name",
+                  course_title: issueForm.courseTitle,
+                  path_id: issueForm.pathId,
+                  lessons_completed: issueForm.lessonsCompleted,
+                  quiz_average: issueForm.quizAverage,
+                  issued_at: new Date().toISOString(),
+                  honors: issueForm.honors,
+                  signature_name: issueForm.signatureName,
+                  signature_title: issueForm.signatureTitle,
+                  signature_url: issueForm.signatureUrl,
+                } as CertificateData}
+              />
+            </div>
+          </section>
+        ) : null}
+
 
         {tab === "users" ? (
           <section className="duo-card space-y-3 p-5">
@@ -360,6 +464,27 @@ function Field({ name, label, defaultValue }: { name: string; label: string; def
       <input
         name={name}
         defaultValue={defaultValue}
+        className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
+      />
+    </label>
+  );
+}
+
+function IssueField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-xs font-black text-duo-muted">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
       />
     </label>
