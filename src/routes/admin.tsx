@@ -469,3 +469,24 @@ function Field({ name, label, defaultValue }: { name: string; label: string; def
     </label>
   );
 }
+
+function IssueField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-xs font-black text-duo-muted">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
+      />
+    </label>
+  );
+}
