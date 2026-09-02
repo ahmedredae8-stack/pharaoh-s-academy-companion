@@ -106,6 +106,25 @@ jobs:
           fi
           grep -n "billingclient" "$GRADLE_FILE"
 
+      # فرض نسخة الدفع على كل الوحدات (الإضافات تجلب نسخة قديمة 4.x)
+      - name: Force Billing version for all modules
+        run: |
+          set -e
+          ROOT=android/build.gradle
+          [ -f "$ROOT" ] || ROOT=android/build.gradle.kts
+          if [ "${ROOT##*.}" = "kts" ]; then
+            printf '\nallprojects {\n    configurations.all {\n        resolutionStrategy {\n            force("com.android.billingclient:billing:%s")\n            force("com.android.billingclient:billing-ktx:%s")\n        }\n    }\n}\n' "$BILLING_VERSION" "$BILLING_VERSION" >> "$ROOT"
+          else
+            printf '\nallprojects {\n    configurations.all {\n        resolutionStrategy {\n            force "com.android.billingclient:billing:%s"\n            force "com.android.billingclient:billing-ktx:%s"\n        }\n    }\n}\n' "$BILLING_VERSION" "$BILLING_VERSION" >> "$ROOT"
+          fi
+          tail -12 "$ROOT"
+
+      - name: Verify resolved Billing version
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath --no-daemon | grep -i billing || true
+
       - name: Ensure Billing permission
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
