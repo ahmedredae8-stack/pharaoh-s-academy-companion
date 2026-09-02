@@ -241,7 +241,71 @@ function AuthPage() {
 
         <div className="my-4 text-center text-xs font-bold text-duo-muted">أو</div>
 
-        <form onSubmit={submit} className="space-y-3">
+        <button
+          type="button"
+          onClick={() => {
+            setUseCode((v) => !v);
+            setCodeSent(false);
+            setOtp("");
+          }}
+          className="mb-3 w-full rounded-2xl border-2 border-duo-line px-4 py-2 text-xs font-black text-duo-blue"
+        >
+          {useCode ? "الدخول بكلمة المرور" : "الدخول برمز يصل إلى بريدك"}
+        </button>
+
+        {useCode ? (
+          <div className="space-y-3">
+            <div className="relative">
+              <Mail className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-duo-muted" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="البريد الإلكتروني"
+                className="w-full rounded-2xl border-2 border-duo-line bg-duo-surface px-4 py-3 pr-10 text-sm font-bold text-duo-text outline-none focus:border-duo-blue"
+              />
+            </div>
+            {codeSent ? (
+              <>
+                <input
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full rounded-2xl border-2 border-duo-line bg-duo-surface px-4 py-3 text-center font-mono text-lg font-black tracking-[0.5em] text-duo-text outline-none focus:border-duo-blue"
+                />
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void verifyCode()}
+                  className="duo-btn w-full px-4 py-3 text-sm disabled:opacity-50"
+                >
+                  تأكيد الرمز والدخول
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void sendCode()}
+                  className="w-full text-center text-xs font-bold text-duo-muted underline"
+                >
+                  إعادة إرسال الرمز
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void sendCode()}
+                className="duo-btn w-full px-4 py-3 text-sm disabled:opacity-50"
+              >
+                إرسال رمز الدخول
+              </button>
+            )}
+          </div>
+        ) : null}
+
+        <form onSubmit={submit} className={`space-y-3 ${useCode ? "hidden" : ""}`}>
           <div className="relative">
             <Mail className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-duo-muted" />
             <input
