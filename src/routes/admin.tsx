@@ -253,6 +253,7 @@ function AdminPage() {
                         signatureName: String(form.get("signatureName") ?? ""),
                         signatureTitle: String(form.get("signatureTitle") ?? ""),
                         signatureUrl: String(form.get("signatureUrl") ?? ""),
+                        template: String(form.get("template") ?? "royal"),
                       });
                     }}
                   >
