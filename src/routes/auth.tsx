@@ -126,6 +126,46 @@ function AuthPage() {
     }
   }
 
+  async function sendCode() {
+    if (!emailValid) {
+      toast.error("أدخل بريدًا إلكترونيًا صحيحًا");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      });
+      if (error) throw error;
+      setCodeSent(true);
+      toast.success("أرسلنا رمز الدخول إلى بريدك الإلكتروني");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر إرسال الرمز");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode() {
+    const token = otp.replace(/\D/g, "");
+    if (token.length < 6) {
+      toast.error("أدخل الرمز المكوّن من 6 أرقام");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+      if (error) throw error;
+      toast.success("تم تسجيل الدخول");
+      void navigate({ to: destination });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "الرمز غير صحيح أو منتهي");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function resetPassword() {
     if (!emailValid) {
       toast.error("اكتب بريدك أولًا لإرسال رابط الاستعادة");
