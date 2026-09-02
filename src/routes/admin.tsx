@@ -263,6 +263,20 @@ function AdminPage() {
                     <Field name="signatureName" label="اسم الموقّع" defaultValue={cert.signature_name ?? ""} />
                     <Field name="signatureTitle" label="صفة الموقّع" defaultValue={cert.signature_title ?? ""} />
                     <Field name="signatureUrl" label="رابط صورة التوقيع" defaultValue={cert.signature_url ?? ""} />
+                    <label className="block text-xs font-black text-duo-muted">
+                      قالب الشهادة
+                      <select
+                        name="template"
+                        defaultValue={cert.template ?? "royal"}
+                        className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
+                      >
+                        {CERTIFICATE_TEMPLATES.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <button type="submit" disabled={designMut.isPending} className="duo-btn text-sm">
                       حفظ التصميم
                     </button>
