@@ -6,6 +6,7 @@ import { Medal, Trophy } from "lucide-react";
 import { useAccount } from "@/components/account/AccountProvider";
 import { DuoLayout } from "@/components/duo/DuoLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { safeDisplayName } from "@/lib/utils";
 
 type Row = {
   user_id: string;
