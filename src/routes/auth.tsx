@@ -66,6 +66,9 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [useCode, setUseCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const strength = useMemo(() => scorePassword(password), [password]);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
