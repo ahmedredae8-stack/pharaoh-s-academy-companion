@@ -181,6 +181,7 @@ function AdminPage() {
             {(
               [
                 ["certs", "الشهادات"],
+                ["issue", "إصدار يدوي"],
                 ["users", "المستخدمون"],
                 ["codes", "أكواد التفعيل"],
               ] as const
