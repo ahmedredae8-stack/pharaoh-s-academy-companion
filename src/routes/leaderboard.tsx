@@ -74,6 +74,7 @@ function LeaderboardPage() {
         <ol className="mt-6 space-y-2">
           {(data ?? []).map((row, i) => {
             const me = row.user_id === session.user.id;
+            const tier = rankTier(row.xp);
             return (
               <li
                 key={row.user_id}
@@ -84,10 +85,23 @@ function LeaderboardPage() {
                 <span className={`w-6 text-center font-black ${MEDALS[i] ?? "text-duo-muted"}`}>
                   {i < 3 ? <Medal className="mx-auto h-5 w-5" /> : i + 1}
                 </span>
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-duo-surface-2 text-xl">
-                  {row.avatar_url ?? "🐱"}
-                </span>
-                <span className="flex-1 truncate font-bold">{safeDisplayName(row.display_name)}</span>
+                <Avatar value={row.avatar_url} name={row.display_name} size={40} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold">{safeDisplayName(row.display_name, 16)}</p>
+                  <p className="flex items-center gap-1 text-[11px] font-bold text-duo-muted">
+                    <span className="flex" aria-label={`${tier.stars} نجوم`}>
+                      {Array.from({ length: 5 }, (_, s) => (
+                        <Star
+                          key={s}
+                          className={`h-3 w-3 ${s < tier.stars ? "fill-duo-yellow text-duo-yellow" : "text-duo-line"}`}
+                        />
+                      ))}
+                    </span>
+                    <span>{tier.label}</span>
+                    <span>• {row.labs} معمل</span>
+                    <span>• {row.quiz_points} نقطة اختبار</span>
+                  </p>
+                </div>
                 <span className="font-black text-duo-blue">{row.xp} XP</span>
               </li>
             );
@@ -96,6 +110,7 @@ function LeaderboardPage() {
             <li className="duo-card p-6 text-center text-duo-muted">لا توجد نتائج بعد — كن الأول!</li>
           ) : null}
         </ol>
+
       )}
     </DuoLayout>
   );
