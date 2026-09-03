@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Ban, KeyRound, ShieldCheck, Signature } from "lucide-react";
+import { Ban, Bell, KeyRound, PackageSearch, RefreshCw, ShieldCheck, Signature } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -18,8 +18,12 @@ import { adminIssueCertificate, adminUpdateCertificateDesign } from "@/lib/admin
 import {
   adminCreateRedeemCodes,
   adminListCertificates,
+  adminListProducts,
+  adminListPurchases,
   adminListRedeemCodes,
   adminListUsers,
+  adminRefreshPurchase,
+  adminSaveProduct,
   adminReviewCertificate,
   adminSetBan,
   adminStats,
@@ -56,8 +60,12 @@ function AdminPage() {
   const stats = useServerFn(adminStats);
   const createCodes = useServerFn(adminCreateRedeemCodes);
   const listCodes = useServerFn(adminListRedeemCodes);
+  const listPurchases = useServerFn(adminListPurchases);
+  const refreshPurchase = useServerFn(adminRefreshPurchase);
+  const listProducts = useServerFn(adminListProducts);
+  const saveProduct = useServerFn(adminSaveProduct);
 
-  const [tab, setTab] = useState<"certs" | "issue" | "users" | "codes">("certs");
+  const [tab, setTab] = useState<"certs" | "issue" | "users" | "codes" | "play" | "products">("certs");
   const [userQuery, setUserQuery] = useState("");
   const [editing, setEditing] = useState<any>(null);
   const [codeProduct, setCodeProduct] = useState("pharaoh_pro_lifetime");
@@ -87,6 +95,17 @@ function AdminPage() {
     queryKey: ["admin-users", userQuery],
     queryFn: () => listUsers({ data: { query: userQuery } }),
     enabled: isAdmin && tab === "users",
+  });
+  const play = useQuery({
+    queryKey: ["admin-play"],
+    queryFn: () => listPurchases(),
+    enabled: isAdmin && tab === "play",
+    refetchInterval: tab === "play" ? 30_000 : false,
+  });
+  const products = useQuery({
+    queryKey: ["admin-products"],
+    queryFn: () => listProducts(),
+    enabled: isAdmin && tab === "products",
   });
   const codes = useQuery({ queryKey: ["admin-codes"], queryFn: () => listCodes(), enabled: isAdmin && tab === "codes" });
 
@@ -126,6 +145,24 @@ function AdminPage() {
     onSuccess: () => {
       toast.success("تم تحديث حالة المستخدم");
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const refreshPurchaseMut = useMutation({
+    mutationFn: (purchaseToken: string) => refreshPurchase({ data: { purchaseToken } }),
+    onSuccess: (result: any) => {
+      toast.success(result?.granted ? "الاشتراك ما زال ساريًا" : "تم تحديث حالة الاشتراك");
+      queryClient.invalidateQueries({ queryKey: ["admin-play"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const productMut = useMutation({
+    mutationFn: (input: any) => saveProduct({ data: input }),
+    onSuccess: () => {
+      toast.success("تم حفظ بيانات المنتج");
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -173,6 +210,11 @@ function AdminPage() {
   const certRows = (certs.data ?? []) as any[];
   const userRows = (users.data ?? []) as any[];
   const codeRows = (codes.data ?? []) as any[];
+  const playData = (play.data ?? { purchases: [], entitlements: [] }) as {
+    purchases: any[];
+    entitlements: any[];
+  };
+  const productRows = (products.data ?? []) as any[];
   const summary = overview.data as any;
 
   return (
@@ -195,6 +237,8 @@ function AdminPage() {
                 ["issue", "إصدار يدوي"],
                 ["users", "المستخدمون"],
                 ["codes", "أكواد التفعيل"],
+                ["play", "إشعارات Play"],
+                ["products", "إدارة المنتجات"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -408,6 +452,157 @@ function AdminPage() {
                 </button>
               </div>
             ))}
+          </section>
+        ) : null}
+
+
+        {tab === "play" ? (
+          <section className="duo-card space-y-4 p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-black">
+                <Bell className="h-5 w-5 text-duo-yellow" /> إشعارات اشتراكات Google Play
+              </h2>
+              <button
+                type="button"
+                className="duo-btn duo-btn-ghost text-xs"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-play"] })}
+              >
+                <RefreshCw className="h-4 w-4" /> تحديث
+              </button>
+            </div>
+            <p className="text-xs text-duo-muted">
+              تُحدَّث القائمة تلقائيًا كل 30 ثانية وتصل إشعارات Play اللحظية على نقطة الاستقبال الخاصة بالتطبيق.
+            </p>
+
+            <div className="space-y-2">
+              {playData.purchases.length === 0 ? (
+                <p className="rounded-xl bg-duo-surface-2 p-4 text-center text-xs text-duo-muted">لا توجد عمليات شراء بعد.</p>
+              ) : null}
+              {playData.purchases.map((row) => {
+                const expired = row.expires_at ? new Date(row.expires_at).getTime() < Date.now() : false;
+                return (
+                  <div key={row.purchase_token} className="space-y-1 rounded-xl bg-duo-surface-2 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-black">{row.product_id}</p>
+                      <span
+                        className={`rounded-full px-3 py-1 text-[11px] font-black ${
+                          row.state === "active" && !expired ? "bg-duo-green/20 text-duo-green" : "bg-duo-red/20 text-duo-red"
+                        }`}
+                      >
+                        {expired ? "منتهي" : row.state}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-duo-muted">
+                      {row.expires_at ? `ينتهي: ${new Date(row.expires_at).toLocaleString("ar-EG")}` : "شراء لمرة واحدة"}
+                    </p>
+                    <p className="font-mono text-[10px] text-duo-muted">{row.purchase_token.slice(0, 28)}…</p>
+                    <button
+                      type="button"
+                      className="duo-btn duo-btn-ghost text-[11px]"
+                      disabled={refreshPurchaseMut.isPending}
+                      onClick={() => refreshPurchaseMut.mutate(row.purchase_token)}
+                    >
+                      <RefreshCw className="h-3 w-3" /> إعادة التحقق من Google
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <h3 className="text-sm font-black">الصلاحيات النشطة</h3>
+            <div className="space-y-1">
+              {playData.entitlements.map((row) => (
+                <p key={`${row.user_id}-${row.product_id}`} className="rounded-lg bg-duo-surface-2 px-3 py-2 text-xs font-bold">
+                  {row.product_id} — {row.status}
+                  {row.expires_at ? ` حتى ${new Date(row.expires_at).toLocaleDateString("ar-EG")}` : ""}
+                </p>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {tab === "products" ? (
+          <section className="duo-card space-y-4 p-5">
+            <h2 className="flex items-center gap-2 text-sm font-black">
+              <PackageSearch className="h-5 w-5 text-duo-blue" /> إدارة المنتجات والأسعار
+            </h2>
+            <p className="text-xs text-duo-muted">
+              الأسعار المحفوظة هنا تُستخدم تلقائيًا عند فتح شاشات الشراء داخل التطبيق ومزامنتها مع معرفات متجر Play.
+            </p>
+
+            {productRows.map((product) => (
+              <form
+                key={product.id ?? product.product_id}
+                className="grid gap-2 rounded-2xl bg-duo-surface-2 p-4 sm:grid-cols-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = new FormData(event.currentTarget);
+                  productMut.mutate({
+                    id: product.id,
+                    productId: String(form.get("productId") ?? ""),
+                    title: String(form.get("title") ?? ""),
+                    description: String(form.get("description") ?? ""),
+                    priceCents: Number(form.get("price") ?? 0) * 100,
+                    currency: String(form.get("currency") ?? "USD"),
+                    kind: product.kind === "subscription" ? "subscription" : "one_time",
+                    provider: product.provider ?? "google_play",
+                    active: form.get("active") === "on",
+                  });
+                }}
+              >
+                <Field name="productId" label="معرّف Play" defaultValue={product.product_id} />
+                <Field name="title" label="الاسم" defaultValue={product.title} />
+                <Field name="description" label="الوصف" defaultValue={product.description ?? ""} />
+                <Field name="price" label="السعر (بالدولار)" defaultValue={String((product.price_cents ?? 0) / 100)} />
+                <Field name="currency" label="العملة" defaultValue={product.currency ?? "USD"} />
+                <label className="flex items-center gap-2 self-end text-xs font-black text-duo-muted">
+                  <input type="checkbox" name="active" defaultChecked={product.active !== false} /> مُفعّل في المتجر
+                </label>
+                <button type="submit" disabled={productMut.isPending} className="duo-btn text-sm sm:col-span-2">
+                  حفظ المنتج
+                </button>
+              </form>
+            ))}
+
+            <form
+              className="grid gap-2 rounded-2xl border-2 border-dashed border-duo-line p-4 sm:grid-cols-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
+                productMut.mutate({
+                  productId: String(form.get("productId") ?? ""),
+                  title: String(form.get("title") ?? ""),
+                  description: String(form.get("description") ?? ""),
+                  priceCents: Number(form.get("price") ?? 0) * 100,
+                  currency: String(form.get("currency") ?? "USD"),
+                  kind: String(form.get("kind") ?? "one_time") === "subscription" ? "subscription" : "one_time",
+                  provider: "google_play",
+                  active: true,
+                });
+                event.currentTarget.reset();
+              }}
+            >
+              <p className="text-xs font-black text-duo-muted sm:col-span-2">إضافة منتج جديد</p>
+              <Field name="productId" label="معرّف Play" defaultValue="certificate_official" />
+              <Field name="title" label="الاسم" defaultValue="" />
+              <Field name="description" label="الوصف" defaultValue="" />
+              <Field name="price" label="السعر (بالدولار)" defaultValue="9.99" />
+              <Field name="currency" label="العملة" defaultValue="USD" />
+              <label className="block text-xs font-black text-duo-muted">
+                النوع
+                <select
+                  name="kind"
+                  defaultValue="one_time"
+                  className="mt-1 w-full rounded-xl border-2 border-duo-line bg-duo-ink px-3 py-2 text-sm font-bold text-duo-text"
+                >
+                  <option value="one_time">شراء لمرة واحدة</option>
+                  <option value="subscription">اشتراك</option>
+                </select>
+              </label>
+              <button type="submit" className="duo-btn text-sm sm:col-span-2">
+                إضافة
+              </button>
+            </form>
           </section>
         ) : null}
 
