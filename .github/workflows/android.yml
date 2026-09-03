@@ -20,7 +20,7 @@ env:
   # أحدث إصدار من مكتبة الدفع الرسمية لمتجر Google Play
   BILLING_VERSION: "8.0.0"
   # رقم الإصدار يبدأ من 1010
-  VERSION_CODE_BASE: "1010"
+  VERSION_CODE_BASE: "1011"
 
 jobs:
   build:

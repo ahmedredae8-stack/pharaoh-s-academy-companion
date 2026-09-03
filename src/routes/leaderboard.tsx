@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Medal, Trophy } from "lucide-react";
+import { Medal, Star, Trophy } from "lucide-react";
 
 import { useAccount } from "@/components/account/AccountProvider";
+import { Avatar } from "@/components/community/Avatar";
 import { DuoLayout } from "@/components/duo/DuoLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDisplayName } from "@/lib/utils";
@@ -36,6 +37,15 @@ export const Route = createFileRoute("/leaderboard")({
   }),
   component: LeaderboardPage,
 });
+
+/** رتبة الطالب حسب النقاط: 5 نجوم كحد أقصى. */
+function rankTier(xp: number): { stars: number; label: string } {
+  if (xp >= 1200) return { stars: 5, label: "أسطورة الأمن" };
+  if (xp >= 700) return { stars: 4, label: "قائد ميداني" };
+  if (xp >= 350) return { stars: 3, label: "محلل خبير" };
+  if (xp >= 120) return { stars: 2, label: "حارس متقدّم" };
+  return { stars: 1, label: "مجنّد جديد" };
+}
 
 const MEDALS = ["text-duo-yellow", "text-slate-300", "text-amber-600"];
 
