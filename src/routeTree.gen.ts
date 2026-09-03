@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BuyCertificateRouteImport } from './routes/buy-certificate'
 import { Route as CertPreviewRouteImport } from './routes/cert-preview'
 import { Route as CertificatesRouteImport } from './routes/certificates'
 import { Route as CommunityRouteImport } from './routes/community'
@@ -36,6 +37,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuyCertificateRoute = BuyCertificateRouteImport.update({
+  id: '/buy-certificate',
+  path: '/buy-certificate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CertPreviewRoute = CertPreviewRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/buy-certificate': typeof BuyCertificateRoute
   '/cert-preview': typeof CertPreviewRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/buy-certificate': typeof BuyCertificateRoute
   '/cert-preview': typeof CertPreviewRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/buy-certificate': typeof BuyCertificateRoute
   '/cert-preview': typeof CertPreviewRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/buy-certificate'
     | '/cert-preview'
     | '/certificates'
     | '/community'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/buy-certificate'
     | '/cert-preview'
     | '/certificates'
     | '/community'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/buy-certificate'
     | '/cert-preview'
     | '/certificates'
     | '/community'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BuyCertificateRoute: typeof BuyCertificateRoute
   CertPreviewRoute: typeof CertPreviewRoute
   CertificatesRoute: typeof CertificatesRoute
   CommunityRoute: typeof CommunityRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buy-certificate': {
+      id: '/buy-certificate'
+      path: '/buy-certificate'
+      fullPath: '/buy-certificate'
+      preLoaderRoute: typeof BuyCertificateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cert-preview': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BuyCertificateRoute: BuyCertificateRoute,
   CertPreviewRoute: CertPreviewRoute,
   CertificatesRoute: CertificatesRoute,
   CommunityRoute: CommunityRoute,
