@@ -254,3 +254,53 @@ export const adminStats = createServerFn({ method: "GET" })
       pendingCertificates: pending.count ?? 0,
     };
   });
+
+/* ----------------------------- play purchases ----------------------------- */
+
+export const adminListPurchases = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: purchases }, { data: entitlements }] = await Promise.all([
+      supabaseAdmin
+        .from("purchases")
+        .select("id, user_id, product_id, purchase_token, order_id, state, expires_at, platform, created_at, updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(60),
+      supabaseAdmin
+        .from("entitlements")
+        .select("user_id, product_id, status, source, expires_at, auto_renewing, updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(60),
+    ]);
+    return { purchases: purchases ?? [], entitlements: entitlements ?? [] };
+  });
+
+/** إعادة التحقق من إيصال Play وتحديث الصلاحية تلقائيًا. */
+export const adminRefreshPurchase = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ purchaseToken: z.string().min(5) }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("purchases")
+      .select("user_id, product_id, purchase_token, expires_at")
+      .eq("purchase_token", data.purchaseToken)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("لا يوجد إيصال بهذا الرمز");
+
+    const { verifySubscription, verifyProductPurchase } = await import("./play.server");
+    const { applyPlayPurchase } = await import("./play-entitlements.server");
+    const purchase = row.expires_at
+      ? await verifySubscription(row.purchase_token)
+      : await verifyProductPurchase(row.product_id, row.purchase_token);
+    return applyPlayPurchase({
+      userId: row.user_id,
+      purchaseToken: row.purchase_token,
+      purchase,
+      fallbackProductId: row.product_id,
+    });
+  });
