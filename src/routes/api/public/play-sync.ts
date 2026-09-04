@@ -42,7 +42,9 @@ export const Route = createFileRoute("/api/public/play-sync")({
         }
 
         const results: Record<string, unknown> = {};
-        results["list"] = await api(token, `applications/${encodeURIComponent(packageName)}/inappproducts`);
+        const pkg = encodeURIComponent(packageName);
+        results["oneTime"] = await api(token, `applications/${pkg}/oneTimeProducts`);
+        results["subscriptions"] = await api(token, `applications/${pkg}/subscriptions`);
 
         if (url.searchParams.get("create") === "1") {
           const created: Record<string, unknown> = {};
