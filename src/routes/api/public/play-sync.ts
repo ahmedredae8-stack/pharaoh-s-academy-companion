@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/public/play-sync")({
         if (url.searchParams.get("probe") === "1") {
           const probe: Record<string, unknown> = {};
           probe["patch-lower"] = await api(token, `applications/${pkg}/onetimeproducts/probe_x?allowMissing=true&regionsVersion.version=${rv}`, { method: "PATCH", body: "{}" });
-          probe["patch-camel-nomask"] = await api(token, `applications/${pkg}/oneTimeProducts/probe_x`, { method: "PATCH", body: "{}" });
+          probe["skip1"] = await api(token, `applications/${pkg}/oneTimeProducts/probe_x`, { method: "PATCH", body: "{}" });
           probe["patch-camel-mask"] = await api(token, `applications/${pkg}/oneTimeProducts/probe_x?allowMissing=true&updateMask=listings&regionsVersion.version=${rv}`, { method: "PATCH", body: "{}" });
           probe["sub-rv"] = await api(token, `applications/${pkg}/subscriptions?productId=probe_x&regionsVersion.version=${rv}`, { method: "POST", body: "{}" });
           return Response.json(probe);
@@ -122,7 +122,7 @@ export const Route = createFileRoute("/api/public/play-sync")({
             };
             oneTime[product.id] = await api(
               token,
-              `applications/${pkg}/oneTimeProducts/${product.id}?allowMissing=true&regionsVersion.version=${rv}`,
+              `applications/${pkg}/onetimeproducts/${product.id}?allowMissing=true&updateMask=listings,purchaseOptions&regionsVersion.version=${rv}`,
               { method: "PATCH", body: JSON.stringify(body) },
             );
           }
@@ -174,7 +174,7 @@ export const Route = createFileRoute("/api/public/play-sync")({
           results["subscriptionsCreated"] = subs;
         }
 
-        results["oneTime"] = await api(token, `applications/${pkg}/oneTimeProducts`);
+        results["oneTime"] = await api(token, `applications/${pkg}/onetimeproducts`);
         results["subscriptions"] = await api(token, `applications/${pkg}/subscriptions`);
         return Response.json(results);
       },
