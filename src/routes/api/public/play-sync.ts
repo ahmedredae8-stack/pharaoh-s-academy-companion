@@ -78,6 +78,16 @@ export const Route = createFileRoute("/api/public/play-sync")({
         }
 
         const results: Record<string, unknown> = {};
+        const rv = url.searchParams.get("rv") ?? REGIONS_VERSION;
+
+        if (url.searchParams.get("probe") === "1") {
+          const probe: Record<string, unknown> = {};
+          probe["patch-lower"] = await api(token, `applications/${pkg}/onetimeproducts/probe_x?allowMissing=true&regionsVersion.version=${rv}`, { method: "PATCH", body: "{}" });
+          probe["patch-camel-nomask"] = await api(token, `applications/${pkg}/oneTimeProducts/probe_x`, { method: "PATCH", body: "{}" });
+          probe["patch-camel-mask"] = await api(token, `applications/${pkg}/oneTimeProducts/probe_x?allowMissing=true&updateMask=listings&regionsVersion.version=${rv}`, { method: "PATCH", body: "{}" });
+          probe["sub-rv"] = await api(token, `applications/${pkg}/subscriptions?productId=probe_x&regionsVersion.version=${rv}`, { method: "POST", body: "{}" });
+          return Response.json(probe);
+        }
 
         if (url.searchParams.get("create") === "1") {
           const oneTime: Record<string, unknown> = {};
@@ -112,7 +122,7 @@ export const Route = createFileRoute("/api/public/play-sync")({
             };
             oneTime[product.id] = await api(
               token,
-              `applications/${pkg}/oneTimeProducts/${product.id}?allowMissing=true&regionsVersion.version=${REGIONS_VERSION}`,
+              `applications/${pkg}/oneTimeProducts/${product.id}?allowMissing=true&regionsVersion.version=${rv}`,
               { method: "PATCH", body: JSON.stringify(body) },
             );
           }
@@ -148,7 +158,7 @@ export const Route = createFileRoute("/api/public/play-sync")({
             };
             const created = await api(
               token,
-              `applications/${pkg}/subscriptions?productId=${sub.id}&regionsVersion.version=${REGIONS_VERSION}`,
+              `applications/${pkg}/subscriptions?productId=${sub.id}&regionsVersion.version=${rv}`,
               { method: "POST", body: JSON.stringify(body) },
             );
             const activated =
