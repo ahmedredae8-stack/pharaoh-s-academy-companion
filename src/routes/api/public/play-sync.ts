@@ -27,6 +27,30 @@ function money(usd: number): Money {
   return { currencyCode: "USD", units: String(Math.floor(usd)), nanos: Math.round((usd % 1) * 1e9) };
 }
 
+
+function badRegion(body: unknown): string | null {
+  const message = typeof body === "object" && body !== null ? (body as { error?: { message?: string } }).error?.message ?? "" : String(body);
+  const match = /region code ([A-Z]{2})/.exec(message);
+  return match?.[1] ?? null;
+}
+
+async function withRegionRetry(
+  send: (regions: { regionCode: string; price: Money }[]) => Promise<{ status: number; body: unknown }>,
+  regions: { regionCode: string; price: Money }[],
+) {
+  let current = regions;
+  const dropped: string[] = [];
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const result = await send(current);
+    if (result.status < 300) return { ...result, dropped };
+    const region = badRegion(result.body);
+    if (!region) return { ...result, dropped };
+    dropped.push(region);
+    current = current.filter((r) => r.regionCode !== region);
+  }
+  return { status: 400, body: "too many region errors", dropped };
+}
+
 async function api(token: string, path: string, init: RequestInit = {}) {
   const response = await fetch(`https://androidpublisher.googleapis.com/androidpublisher/v3/${path}`, {
     ...init,
@@ -97,33 +121,39 @@ export const Route = createFileRoute("/api/public/play-sync")({
               oneTime[product.id] = { step: "convertRegionPrices", ...priced.error };
               continue;
             }
-            const body = {
-              packageName: readPackageName(),
-              productId: product.id,
-              listings: [
-                { languageCode: "en-US", title: product.title, description: product.description },
-              ],
-              purchaseOptions: [
-                {
-                  purchaseOptionId: "default",
-                  buyOption: { legacyCompatible: true, multiQuantityEnabled: false },
-                  regionalPricingAndAvailabilityConfigs: priced.regions.map((r) => ({
-                    regionCode: r.regionCode,
-                    price: r.price,
-                    availability: "AVAILABLE",
-                  })),
-                  newRegionsConfig: {
-                    availability: "AVAILABLE",
-                    usdPrice: priced.other?.usdPrice ?? money(product.usd),
-                    eurPrice: priced.other?.eurPrice ?? money(product.usd),
+            oneTime[product.id] = await withRegionRetry(
+              (regions) =>
+                api(
+                  token,
+                  `applications/${pkg}/onetimeproducts/${product.id}?allowMissing=true&updateMask=listings,purchaseOptions&regionsVersion.version=${rv}`,
+                  {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      packageName: readPackageName(),
+                      productId: product.id,
+                      listings: [
+                        { languageCode: "en-US", title: product.title, description: product.description },
+                      ],
+                      purchaseOptions: [
+                        {
+                          purchaseOptionId: "default",
+                          buyOption: { legacyCompatible: true, multiQuantityEnabled: false },
+                          regionalPricingAndAvailabilityConfigs: regions.map((r) => ({
+                            regionCode: r.regionCode,
+                            price: r.price,
+                            availability: "AVAILABLE",
+                          })),
+                          newRegionsConfig: {
+                            availability: "AVAILABLE",
+                            usdPrice: priced.other?.usdPrice ?? money(product.usd),
+                            eurPrice: priced.other?.eurPrice ?? money(product.usd),
+                          },
+                        },
+                      ],
+                    }),
                   },
-                },
-              ],
-            };
-            oneTime[product.id] = await api(
-              token,
-              `applications/${pkg}/onetimeproducts/${product.id}?allowMissing=true&updateMask=listings,purchaseOptions&regionsVersion.version=${rv}`,
-              { method: "PATCH", body: JSON.stringify(body) },
+                ),
+              priced.regions,
             );
           }
           results["oneTimeCreated"] = oneTime;
@@ -135,38 +165,49 @@ export const Route = createFileRoute("/api/public/play-sync")({
               subs[sub.id] = { step: "convertRegionPrices", ...priced.error };
               continue;
             }
-            const body = {
-              packageName: readPackageName(),
-              productId: sub.id,
-              listings: [{ languageCode: "en-US", title: sub.title, benefits: ["All learning paths", "Unlimited labs"] }],
-              basePlans: [
-                {
-                  basePlanId: sub.basePlanId,
-                  autoRenewingBasePlanType: { billingPeriodDuration: sub.period, gracePeriodDuration: "P7D" },
-                  regionalConfigs: priced.regions.map((r) => ({
-                    regionCode: r.regionCode,
-                    price: r.price,
-                    newSubscriberAvailability: true,
-                  })),
-                  otherRegionsConfig: {
-                    usdPrice: priced.other?.usdPrice ?? money(sub.usd),
-                    eurPrice: priced.other?.eurPrice ?? money(sub.usd),
-                    newSubscriberAvailability: true,
-                  },
-                },
-              ],
-            };
-            const created = await api(
-              token,
-              `applications/${pkg}/subscriptions?productId=${sub.id}&regionsVersion.version=${rv}`,
-              { method: "POST", body: JSON.stringify(body) },
+            const created = await withRegionRetry(
+              (regions) =>
+                api(token, `applications/${pkg}/subscriptions?productId=${sub.id}&regionsVersion.version=${rv}`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    packageName: readPackageName(),
+                    productId: sub.id,
+                    listings: [
+                      { languageCode: "en-US", title: sub.title, benefits: ["All learning paths", "Unlimited labs"] },
+                    ],
+                    basePlans: [
+                      {
+                        basePlanId: sub.basePlanId,
+                        autoRenewingBasePlanType: { billingPeriodDuration: sub.period, gracePeriodDuration: "P7D" },
+                        regionalConfigs: regions.map((r) => ({
+                          regionCode: r.regionCode,
+                          price: r.price,
+                          newSubscriberAvailability: true,
+                        })),
+                        otherRegionsConfig: {
+                          usdPrice: priced.other?.usdPrice ?? money(sub.usd),
+                          eurPrice: priced.other?.eurPrice ?? money(sub.usd),
+                          newSubscriberAvailability: true,
+                        },
+                      },
+                    ],
+                  }),
+                }),
+              priced.regions,
             );
             const activated =
               created.status < 300
                 ? await api(
                     token,
                     `applications/${pkg}/subscriptions/${sub.id}/basePlans/${sub.basePlanId}:activate`,
-                    { method: "POST", body: JSON.stringify({ packageName: readPackageName(), productId: sub.id, basePlanId: sub.basePlanId }) },
+                    {
+                      method: "POST",
+                      body: JSON.stringify({
+                        packageName: readPackageName(),
+                        productId: sub.id,
+                        basePlanId: sub.basePlanId,
+                      }),
+                    },
                   )
                 : null;
             subs[sub.id] = { created, activated };
