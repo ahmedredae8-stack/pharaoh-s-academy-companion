@@ -30,7 +30,7 @@ function money(usd: number): Money {
 
 function badRegion(body: unknown): string | null {
   const message = typeof body === "object" && body !== null ? (body as { error?: { message?: string } }).error?.message ?? "" : String(body);
-  const match = /region code ([A-Z]{2})/.exec(message);
+  const match = /region code ([A-Z]{2})/i.exec(message);
   return match?.[1] ?? null;
 }
 
@@ -40,7 +40,7 @@ async function withRegionRetry(
 ) {
   let current = regions;
   const dropped: string[] = [];
-  for (let attempt = 0; attempt < 12; attempt++) {
+  for (let attempt = 0; attempt < 60; attempt++) {
     const result = await send(current);
     if (result.status < 300) return { ...result, dropped };
     const region = badRegion(result.body);
