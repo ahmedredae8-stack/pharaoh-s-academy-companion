@@ -96,3 +96,73 @@ export const adminIssueCertificate = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, serial: created.serial };
   });
+
+/** طلبات الشهادات المُحتجزة (بانتظار المراجعة) مع تفاصيل الطالب واشتراكاته. */
+export const adminListCertificateRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: certs, error } = await supabaseAdmin
+      .from("certificates")
+      .select(
+        "id, user_id, serial, recipient_name, course_title, path_id, lessons_completed, quiz_average, status, issued_at, template, honors, signature_name, signature_title, signature_url",
+      )
+      .eq("status", "pending")
+      .order("issued_at", { ascending: true })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const rows = certs ?? [];
+    const userIds = [...new Set(rows.map((r) => r.user_id))];
+    if (userIds.length === 0) return [];
+
+    const [profiles, entitlements, quizzes, labs] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, display_name, avatar_url, is_banned").in("id", userIds),
+      supabaseAdmin
+        .from("entitlements")
+        .select("user_id, product_id, status, expires_at, auto_renewing, source")
+        .in("user_id", userIds),
+      supabaseAdmin.from("quiz_results").select("user_id, score, total, path_id").in("user_id", userIds),
+      supabaseAdmin.from("lab_completions").select("user_id, path_id").in("user_id", userIds),
+    ]);
+
+    const emails = new Map<string, string>();
+    await Promise.all(
+      userIds.map(async (id) => {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(id);
+        if (data?.user?.email) emails.set(id, data.user.email);
+      }),
+    );
+
+    return rows.map((cert) => {
+      const profile = (profiles.data ?? []).find((p) => p.id === cert.user_id);
+      const userQuizzes = (quizzes.data ?? []).filter((q) => q.user_id === cert.user_id);
+      const average = userQuizzes.length
+        ? Math.round(
+            (userQuizzes.reduce((sum, q) => sum + (q.total ? q.score / q.total : 0), 0) / userQuizzes.length) * 100,
+          )
+        : 0;
+      return {
+        ...cert,
+        email: emails.get(cert.user_id) ?? null,
+        display_name: profile?.display_name ?? null,
+        avatar_url: profile?.avatar_url ?? null,
+        is_banned: Boolean(profile?.is_banned),
+        quiz_count: userQuizzes.length,
+        quiz_overall_average: average,
+        labs_count: (labs.data ?? []).filter((l) => l.user_id === cert.user_id).length,
+        entitlements: (entitlements.data ?? [])
+          .filter((e) => e.user_id === cert.user_id)
+          .map((e) => ({
+            product_id: e.product_id,
+            status: e.status,
+            expires_at: e.expires_at,
+            auto_renewing: e.auto_renewing,
+            source: e.source,
+            expired: Boolean(e.expires_at && new Date(e.expires_at).getTime() < Date.now()),
+          })),
+      };
+    });
+  });
