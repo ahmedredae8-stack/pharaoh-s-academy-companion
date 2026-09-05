@@ -23,6 +23,9 @@ const SUBSCRIPTIONS: { id: string; basePlanId: string; title: string; period: st
   { id: "pro_yearly", basePlanId: "yearly", title: "Pharaoh Pro Yearly", period: "P1Y", usd: 34.99 },
 ];
 
+const AR_ONE: Record<string, { title: string; description: string }> = {"lifetime": {"title": "وصول مدى الحياة", "description": "دفعة واحدة ووصول دائم لكل المسارات."}, "path_intermediate": {"title": "المسار المتوسط", "description": "افتح مسار الأمن السيبراني المتوسط."}, "path_upper_intermediate": {"title": "المسار فوق المتوسط", "description": "افتح مسار الأمن السيبراني فوق المتوسط."}, "path_advanced": {"title": "المسار المتقدم", "description": "افتح مسار الأمن السيبراني المتقدم."}, "course_cyber_range": {"title": "Pharaoh Cyber Range", "description": "كورس معامل تطبيقية مع مساعدة الذكاء الاصطناعي."}, "certificate_official": {"title": "الشهادة الرسمية", "description": "شهادة موقّعة برقم تسلسلي قابل للتحقق."}, "labs_pack_10": {"title": "١٠ معامل إضافية", "description": "تضيف ١٠ معامل محاكاة لحسابك."}};
+const AR_SUB: Record<string, string> = {"pro_monthly": "Pharaoh Pro شهري", "pro_quarterly": "Pharaoh Pro ربع سنوي", "pro_yearly": "Pharaoh Pro سنوي"};
+
 function money(usd: number): Money {
   return { currencyCode: "USD", units: String(Math.floor(usd)), nanos: Math.round((usd % 1) * 1e9) };
 }
@@ -132,6 +135,11 @@ export const Route = createFileRoute("/api/public/play-sync")({
                       packageName: readPackageName(),
                       productId: product.id,
                       listings: [
+                        {
+                          languageCode: "ar",
+                          title: AR_ONE[product.id]?.title ?? product.title,
+                          description: AR_ONE[product.id]?.description ?? product.description,
+                        },
                         { languageCode: "en-US", title: product.title, description: product.description },
                       ],
                       purchaseOptions: [
@@ -173,6 +181,11 @@ export const Route = createFileRoute("/api/public/play-sync")({
                     packageName: readPackageName(),
                     productId: sub.id,
                     listings: [
+                      {
+                        languageCode: "ar",
+                        title: AR_SUB[sub.id] ?? sub.title,
+                        benefits: ["كل المسارات التعليمية", "معامل غير محدودة"],
+                      },
                       { languageCode: "en-US", title: sub.title, benefits: ["All learning paths", "Unlimited labs"] },
                     ],
                     basePlans: [
