@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuyCertificateRouteImport } from './routes/buy-certificate'
 import { Route as CertPreviewRouteImport } from './routes/cert-preview'
+import { Route as CertificatePrintRouteImport } from './routes/certificate-print'
 import { Route as CertificatesRouteImport } from './routes/certificates'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as CoursesRouteImport } from './routes/courses'
@@ -48,6 +49,11 @@ const BuyCertificateRoute = BuyCertificateRouteImport.update({
 const CertPreviewRoute = CertPreviewRouteImport.update({
   id: '/cert-preview',
   path: '/cert-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CertificatePrintRoute = CertificatePrintRouteImport.update({
+  id: '/certificate-print',
+  path: '/certificate-print',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CertificatesRoute = CertificatesRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/buy-certificate': typeof BuyCertificateRoute
   '/cert-preview': typeof CertPreviewRoute
+  '/certificate-print': typeof CertificatePrintRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/buy-certificate': typeof BuyCertificateRoute
   '/cert-preview': typeof CertPreviewRoute
+  '/certificate-print': typeof CertificatePrintRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/buy-certificate': typeof BuyCertificateRoute
   '/cert-preview': typeof CertPreviewRoute
+  '/certificate-print': typeof CertificatePrintRoute
   '/certificates': typeof CertificatesRoute
   '/community': typeof CommunityRoute
   '/courses': typeof CoursesRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/buy-certificate'
     | '/cert-preview'
+    | '/certificate-print'
     | '/certificates'
     | '/community'
     | '/courses'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/buy-certificate'
     | '/cert-preview'
+    | '/certificate-print'
     | '/certificates'
     | '/community'
     | '/courses'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/buy-certificate'
     | '/cert-preview'
+    | '/certificate-print'
     | '/certificates'
     | '/community'
     | '/courses'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BuyCertificateRoute: typeof BuyCertificateRoute
   CertPreviewRoute: typeof CertPreviewRoute
+  CertificatePrintRoute: typeof CertificatePrintRoute
   CertificatesRoute: typeof CertificatesRoute
   CommunityRoute: typeof CommunityRoute
   CoursesRoute: typeof CoursesRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/cert-preview'
       fullPath: '/cert-preview'
       preLoaderRoute: typeof CertPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/certificate-print': {
+      id: '/certificate-print'
+      path: '/certificate-print'
+      fullPath: '/certificate-print'
+      preLoaderRoute: typeof CertificatePrintRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/certificates': {
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BuyCertificateRoute: BuyCertificateRoute,
   CertPreviewRoute: CertPreviewRoute,
+  CertificatePrintRoute: CertificatePrintRoute,
   CertificatesRoute: CertificatesRoute,
   CommunityRoute: CommunityRoute,
   CoursesRoute: CoursesRoute,
